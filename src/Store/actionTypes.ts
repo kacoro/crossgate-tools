@@ -1,0 +1,4 @@
+export const SELECT_FOLDER = "SELECT_FOLDER"
+export const SELECT_PALET = "SELECT_PALET"
+export const SELECT_VERSION = "SELECT_VERSION"
+export const ADD_IMAGE = "ADD_IMAGE"

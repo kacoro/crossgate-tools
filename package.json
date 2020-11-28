@@ -1,0 +1,84 @@
+{
+  "name": "electron",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kacoro/crossgate-tools.git"
+  },
+  "scripts": {
+    "start-electron": "cross-env ENV=development electron .",
+    "start": "webpack-dev-server --config webpack.config.js",
+    "build-render": "webpack --config webpack.config.js",
+    "build-electron": "electron-builder build -mwl",
+    "build": "npm install && npm run build-render && npm run build-electron"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@types/react-redux": "^7.1.11",
+    "@types/redux": "^3.6.0",
+    "cross-env": "^7.0.2",
+    "css-loader": "^5.0.1",
+    "electron": "^10.1.6",
+    "electron-builder": "^22.9.1",
+    "html-webpack-plugin": "^4.5.0",
+    "node-sass": "^5.0.0",
+    "nodemon": "^2.0.6",
+    "react-redux": "^7.2.2",
+    "redux": "^4.0.5",
+    "redux-devtools": "^3.7.0",
+    "sass-loader": "^10.1.0",
+    "style-loader": "^2.0.0",
+    "ts-loader": "^8.0.11",
+    "typescript": "^4.1.2",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "dependencies": {
+    "@material-ui/icons": "^4.9.1",
+    "@types/material-ui": "^0.21.8",
+    "jimp": "^0.16.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "build": {
+    "productName": "electron-demos",
+    "files": [
+      "dist/",
+      "main.js"
+    ],
+    "dmg": {
+      "contents": [
+        {
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 240,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "directories": {
+      "buildResources": "assets",
+      "output": "release"
+    }
+  }
+}
