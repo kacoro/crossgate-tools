@@ -161,21 +161,29 @@ export function transBuffer(palet: any, encode:string = 'DEC') {//先把数组�
 
     palet = palet.reverse().map( (item:itemType) => {
         if(item<16){
+            
             str += "0"+item.toString(16)
         }else{
-            str += item.toString(16)
+            str += ""+item.toString(16)
         }
-        
+        if(encode=="drr"){
+            console.log("item:",item,item.toString(16))
+        }
     })
     str =  str.replace(/(^0*)/g, "");
-    console.log("hex:",str)
+    if(encode=="drr"){
+        console.log("hex:",str)
+    }
+   
     return str == '' ? 0 : parseInt(str, 16)
 }
 interface infoType {
     [key: string]: any
 }
 
-
+export const clampNumber = (num: number,a: number,b: number)=>{
+    return Math.max(Math.min(num, Math.max(a, b)), Math.min(a, b));
+}
 
 export const myInfoList: infoType = {
     'id': { name: '图片编号', value: 0, isShow: true },

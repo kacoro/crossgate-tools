@@ -191,13 +191,28 @@ export function InfoList(props: Props) {
 
     const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
         const name = event.target.name as keyof typeof state;
-        setState({
-            ...state,
-            [name]: event.target.value,
-        });
+       
+        
+       
         if(name == 'imageId'){
-            debouncedSaveByCallBack(event.target.value);
-        }   
+            let value = Number(event.target.value);
+            if(value<0){
+                value = acount.value - 1
+            }
+            if(value>= acount.value){
+                value = 0
+            }
+            setState({
+                ...state,
+                [name]: value,
+            });
+            debouncedSaveByCallBack(value);
+        }   else{
+            setState({
+                ...state,
+                [name]: event.target.value as string,
+            });
+        }
         
     };
 
@@ -236,7 +251,7 @@ export function InfoList(props: Props) {
                     >
                         <option aria-label="None" value="" />
                         {versions.map((item, index) => {
-                            return <option value={index}>{item.name}</option>
+                            return <option key={index} value={index}>{item.name}</option>
                         })}
 
                     </Select>

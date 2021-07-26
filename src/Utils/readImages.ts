@@ -25,12 +25,12 @@ interface infoType {
 }
 export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
     //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
-    let head = Buffer.allocUnsafe(16);
-    graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
-    // graphics.slice(infoJson.ddr, infoJson.ddr + 16);
-    let graphic  = Buffer.allocUnsafe(infoJson.length-16);
-    // let graphic = graphics.slice(infoJson.ddr + 16,infoJson.ddr + infoJson.length)
-    graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
+    // let head = Buffer.allocUnsafe(16);
+    // graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
+    let head = graphics.subarray(infoJson.ddr, infoJson.ddr + 16);
+    // let graphic  = Buffer.allocUnsafe(infoJson.length-16);
+     let graphic = graphics.subarray(infoJson.ddr + 16,infoJson.ddr + infoJson.length)
+    // graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
     let version = head[2]
     // var image = null;
     if (version == 1 || version == 3) {// 压缩的图片
@@ -51,7 +51,7 @@ export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
 function getInfo(i = 0, palet: Buffer) {
     let json = {    //Buffer.slice末尾不包含
         id: transBuffer(palet.subarray(0, 4)),   //图片的编号 0开始
-        ddr: transBuffer(palet.subarray(4, 8)), //指明图片在数据文件中的起始位置 0 开始
+        ddr: transBuffer(palet.subarray(4, 8),"drr"), //指明图片在数据文件中的起始位置 0 开始
         length: transBuffer(palet.subarray(8, 12)), //图片数据块的大小 块长度;
         x: transBuffer(palet.subarray(12, 16), 'BIN'),  //偏移量X;显示图片时，横坐标偏移X
         y: transBuffer(palet.subarray(16, 20), 'BIN'),  //偏移量Y
