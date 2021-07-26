@@ -123,11 +123,15 @@ type strType = string | any[];
 type itemType =  any |   any[];
 
 export function transBuffer(palet: any, encode:string = 'DEC') {//先把数组倒序，转化为二进制，拼接之后再进行进制转化，默认不转。BIN_OCT_HEX_DEC
+   
+    // 43D // 1085 //10000111101 
+    //00100111101
     var str:strType = ""
-    palet = palet.reverse().map( (item:itemType) => {
-        str += item.toString(2)
-    })
+    
     if (encode == 'BIN') {
+        palet = palet.reverse().map( (item:itemType) => {
+            str += item.toString(2)
+        })
         // 首位是1，为负数 减一取反
         var flag = false
         if (str.slice(0, 1) == "1") {//首位是1 为负数
@@ -154,12 +158,24 @@ export function transBuffer(palet: any, encode:string = 'DEC') {//先把数组�
             return parseInt("-" + str, 2)
         }
     }
-    str = str.replace(/(^0*)/g, "");
-    return str == '' ? 0 : parseInt(str, 2)
+
+    palet = palet.reverse().map( (item:itemType) => {
+        if(item<16){
+            str += "0"+item.toString(16)
+        }else{
+            str += item.toString(16)
+        }
+        
+    })
+    str =  str.replace(/(^0*)/g, "");
+    console.log("hex:",str)
+    return str == '' ? 0 : parseInt(str, 16)
 }
 interface infoType {
     [key: string]: any
 }
+
+
 
 export const myInfoList: infoType = {
     'id': { name: '图片编号', value: 0, isShow: true },

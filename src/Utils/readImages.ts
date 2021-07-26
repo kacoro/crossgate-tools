@@ -28,7 +28,7 @@ export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
     let head = Buffer.allocUnsafe(16);
     graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
     // graphics.slice(infoJson.ddr, infoJson.ddr + 16);
-    let graphic  = Buffer.allocUnsafe(infoJson.length);
+    let graphic  = Buffer.allocUnsafe(infoJson.length-16);
     // let graphic = graphics.slice(infoJson.ddr + 16,infoJson.ddr + infoJson.length)
     graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
     let version = head[2]
@@ -49,20 +49,19 @@ export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
 
 //获取图片信息
 function getInfo(i = 0, palet: Buffer) {
-  
     let json = {    //Buffer.slice末尾不包含
-        id: transBuffer(palet.slice(0, 4)),   //图片的编号 0开始
-        ddr: transBuffer(palet.slice(4, 8)), //指明图片在数据文件中的起始位置 0 开始
-        length: transBuffer(palet.slice(8, 12)), //图片数据块的大小 块长度;
-        x: transBuffer(palet.slice(12, 16), 'BIN'),  //偏移量X;显示图片时，横坐标偏移X
-        y: transBuffer(palet.slice(16, 20), 'BIN'),  //偏移量Y
-        width: transBuffer(palet.slice(20, 24)),
-        height: transBuffer(palet.slice(24, 28)),
+        id: transBuffer(palet.subarray(0, 4)),   //图片的编号 0开始
+        ddr: transBuffer(palet.subarray(4, 8)), //指明图片在数据文件中的起始位置 0 开始
+        length: transBuffer(palet.subarray(8, 12)), //图片数据块的大小 块长度;
+        x: transBuffer(palet.subarray(12, 16), 'BIN'),  //偏移量X;显示图片时，横坐标偏移X
+        y: transBuffer(palet.subarray(16, 20), 'BIN'),  //偏移量Y
+        width: transBuffer(palet.subarray(20, 24)),
+        height: transBuffer(palet.subarray(24, 28)),
         east: palet[28],
         south: palet[29],
         flag: palet[30],
-        unKnow: palet.slice(31, 36),
-        tileId: transBuffer(palet.slice(36, 40))
+        unKnow: palet.subarray(31, 36),
+        tileId: transBuffer(palet.subarray(36, 40))
     }
   
     return json;
