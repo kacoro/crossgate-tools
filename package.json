@@ -1,5 +1,5 @@
 {
-  "name": "electron",
+  "name": "crossgate-tools",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -9,22 +9,23 @@
   },
   "scripts": {
     "start-electron": "cross-env ENV=development electron .",
-    "start": "webpack-dev-server --config webpack.config.js",
-    "build-render": "webpack --config webpack.config.js",
-    "build-electron": "electron-builder build -w",
+    "start": "cross-env NODE_ENV=development webpack-dev-server --config webpack.config.js",
+    "build-render": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+    "build-electron": "cross-env NODE_ENV=production electron-builder build -w",
     "build": "npm run build-render && npm run build-electron"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@kacoro/utils": "^0.0.3",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "@types/react-redux": "^7.1.11",
     "@types/redux": "^3.6.0",
-    "cross-env": "^7.0.2",
+    "cross-env": "^7.0.3",
     "css-loader": "^5.0.1",
-    "electron": "^10.1.6",
-    "electron-builder": "^22.9.1",
+    "electron": "^13.1.7",
+    "electron-builder": "^22.11.7",
     "html-webpack-plugin": "^4.5.0",
     "node-sass": "^5.0.0",
     "nodemon": "^2.0.6",
@@ -33,21 +34,25 @@
     "redux-devtools": "^3.7.0",
     "sass-loader": "^10.1.0",
     "style-loader": "^2.0.0",
+    "terser-webpack-plugin": "^4.2.3",
     "ts-loader": "^8.0.11",
     "typescript": "^4.1.2",
+    "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3"
+    "webpack-dev-server": "^3.10.3",
+    "webpack-merge": "^5.8.0"
   },
   "dependencies": {
     "@material-ui/icons": "^4.9.1",
     "@types/material-ui": "^0.21.8",
     "jimp": "^0.16.1",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "redux-thunk": "^2.3.0"
   },
   "build": {
-    "productName": "electron-demos",
+    "productName": "crossgate-tools",
     "files": [
       "dist/",
       "main.js"
