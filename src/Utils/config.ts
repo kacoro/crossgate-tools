@@ -164,7 +164,7 @@ interface infoType {
 export const myInfoList: infoType = {
     'id': { name: '图片编号', value: 0, isShow: true },
     'ddr': { name: '起始位置', value: 0, isShow: true },  //图片在数据文件中的起始位置 0 开始
-    'length': { name: '图片编号', value: 0, isShow: true },   //图片数据块的大小 块长度
+    'length': { name: '图片块长度', value: 0, isShow: true },   //图片数据块的大小 块长度
     'x': { name: 'X偏移', value: 0, isShow: true },          //偏移量X;显示图片时，横坐标偏移X
     'y': { name: 'Y偏移', value: 0, isShow: true },          //偏移量y;显示图片时，横坐标偏移y
     'width': { name: '图片宽度', value: 0, isShow: true },

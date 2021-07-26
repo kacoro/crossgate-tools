@@ -12,22 +12,29 @@ export const readGraphicInfo = (binPath:string,version:any) => {
 }
 
 export function getImageInfo(i:number,graphicInfo:Buffer){
-   var json = getInfo(i*40, graphicInfo.slice(i*40, (i + 1) * 40));
-
+    
+    let buf1 = Buffer.allocUnsafe(40);
+    graphicInfo.copy(buf1,0, i*40, (i + 1) * 40);
+  var json = getInfo(i*40, buf1);
+    
    return json
+
 }
 interface infoType {
     [key: string]: any
 }
 export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
     //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
-    let head = graphics.slice(infoJson.ddr, infoJson.ddr + 16);
-    let graphic = graphics.slice(infoJson.ddr + 16,infoJson.ddr + infoJson.length)
+    let head = Buffer.allocUnsafe(16);
+    graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
+    // graphics.slice(infoJson.ddr, infoJson.ddr + 16);
+    let graphic  = Buffer.allocUnsafe(infoJson.length);
+    // let graphic = graphics.slice(infoJson.ddr + 16,infoJson.ddr + infoJson.length)
+    graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
     let version = head[2]
     // var image = null;
     if (version == 1 || version == 3) {// 压缩的图片
         var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - 16)
-
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         let image = await filleImgPixel(infoJson, imageData,palet)
         console.log(image)
@@ -42,6 +49,7 @@ export async function getImage(infoJson:infoType,graphics:Buffer,palet:Buffer){
 
 //获取图片信息
 function getInfo(i = 0, palet: Buffer) {
+  
     let json = {    //Buffer.slice末尾不包含
         id: transBuffer(palet.slice(0, 4)),   //图片的编号 0开始
         ddr: transBuffer(palet.slice(4, 8)), //指明图片在数据文件中的起始位置 0 开始
@@ -54,7 +62,7 @@ function getInfo(i = 0, palet: Buffer) {
         south: palet[29],
         flag: palet[30],
         unKnow: palet.slice(31, 36),
-        tileId: transBuffer(palet.slice(36, 40)),
+        tileId: transBuffer(palet.slice(36, 40))
     }
   
     return json;

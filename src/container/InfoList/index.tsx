@@ -130,13 +130,9 @@ export function InfoList(props: Props) {
     const [infos, SetInfos] = useState(null);
     const canvas = React.useRef(null)
     const container = React.useRef(null)
-    useEffect(function checkGraphicInfo() {
-        if (graphicInfo.length != 0) {
-
-        }
-    }, [infos]);
-    const [graphicInfo, SetGraphicInfo] = useState(Buffer.from(''));
-    const [graphic, SetGraphic] = useState(Buffer.from(''));
+  
+    const [graphicInfo, SetGraphicInfo] = useState(Buffer.allocUnsafe(0));
+    const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
     const [image, SetImage] = useState({} as Bitmap);
     useEffect(function checkGraphicInfo() {
         if (graphicInfo.length != 0) {
@@ -148,38 +144,49 @@ export function InfoList(props: Props) {
         version: '',
         imageId: 0,
     });
-    const [dbValue, saveToDb] = useState('');
+    const [dbValue, saveToDb] = useState(0);
+
+  //切换版本
+  useEffect(function checkVersion() {
+    if (folder != '' && currentPalet != "" && state.version != "") {
+        //查找图片信息
+        let data = readGraphicInfo(folder, state.version);
+
+        SetAccount({
+            ...acount,
+            'value': data.length,
+        })
+        console.log("buffer",data.graphicInfo)
+        SetGraphicInfo(data.graphicInfo)
+        SetGraphic(data.graphic)
+    }
+
+}, [state.version]);
+    //获取图片信息
     useEffect(function checkGraphicID() {
         if (graphicInfo.length != 0) {
-            let info: infoType = getImageInfo(state.imageId, graphicInfo);
+            let info: infoType = getImageInfo(dbValue, graphicInfo);
+            SetInfos(info)
+        }
+    }, [dbValue, graphicInfo,state.version])
 
+
+    // 获取图片
+    useEffect(function checkGraphicInfo() {
+        if (graphicInfo.length != 0) {
             (async () => {
-                let image: any = await getImage(info, graphic, palets)
-                console.log(image);
+                let image: any = await getImage(infos, graphic, palets)
+                //console.log(image);
                 if (image && image.width > 0) {
                     SetImage(image)
                 }
-
             })();
-            SetInfos(info)
         }
-    }, [dbValue, SetInfos, graphicInfo])
-    useEffect(function checkVersion() {
-        if (folder != '' && currentPalet != "" && state.version != "") {
-            //查找图片信息
-            let data = readGraphicInfo(folder, state.version);
+    }, [infos,palets]);
 
-            SetAccount({
-                ...acount,
-                'value': data.length,
-            })
-            SetGraphicInfo(data.graphicInfo)
-            SetGraphic(data.graphic)
-        }
+  
 
-    }, [state.version]);
-
-    const debouncedSaveByCallBack:Function = useCallback(throttle((nextValue: string) => saveToDb(nextValue), 50),[],); // will be created only once initially
+    const debouncedSaveByCallBack:Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50),[],); // will be created only once initially
   
 
     const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
@@ -191,11 +198,10 @@ export function InfoList(props: Props) {
         if(name == 'imageId'){
             debouncedSaveByCallBack(event.target.value);
         }   
-       
         
     };
 
-
+    //生成图片
     useEffect(() => {
         if (image.width > 0) {
             const context = canvas.current.getContext("2d");
@@ -204,7 +210,7 @@ export function InfoList(props: Props) {
             canvas.current.width = width
             canvas.current.height = height
             // context.save();
-            console.dir(container.current.clientWidth)
+            // console.dir(container.current.clientWidth)
             var imageData = new ImageData(
                 Uint8ClampedArray.from(image.data),
                 image.width,

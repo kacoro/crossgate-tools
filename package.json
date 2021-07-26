@@ -11,8 +11,8 @@
     "start-electron": "cross-env ENV=development electron .",
     "start": "webpack-dev-server --config webpack.config.js",
     "build-render": "webpack --config webpack.config.js",
-    "build-electron": "electron-builder build -mwl",
-    "build": "npm install && npm run build-render && npm run build-electron"
+    "build-electron": "electron-builder build -w",
+    "build": "npm run build-render && npm run build-electron"
   },
   "author": "",
   "license": "ISC",
