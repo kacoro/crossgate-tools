@@ -257,15 +257,15 @@ export function InfoList(props: Props) {
                     </Select>
                 </FormControl>
                 <Paper component="form" className={classes.search} >
-                    <IconButton>
-                        <Remove color="primary" onClick={() =>{
+                    <IconButton onClick={() =>{
                             let value = state.imageId > 0 ? Number(state.imageId) - 1 : acount.value - 1
                             setState({
                                 ...state,
                                 "imageId": value
                             })
                             debouncedSaveByCallBack(value)
-                        }} />
+                        }}>
+                        <Remove color="primary"  />
                     </IconButton>
                     <InputBase id="filled-basic" className={classes.input} placeholder="物理编号"
                         inputProps={{ 'aria-label': '物理编号' }} onKeyDown={(event) => {
@@ -277,8 +277,7 @@ export function InfoList(props: Props) {
                                 return false;
                             }
                         }} type="number" value={state.imageId} name="imageId" onChange={handleChange} />
-                    <IconButton>
-                        <Add color="primary" onClick={() => {
+                    <IconButton onClick={() => {
                              let value =  state.imageId >= acount.value - 1 ? 0 : Number(state.imageId) + 1;
                              setState({
                                  ...state,
@@ -287,7 +286,8 @@ export function InfoList(props: Props) {
                              debouncedSaveByCallBack(value)
                             }
                        
-                        } />
+                        }>
+                        <Add color="primary"  />
                     </IconButton>
                 </Paper>
 

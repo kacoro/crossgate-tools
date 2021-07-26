@@ -80,7 +80,6 @@ const filleImgPixel =  (prop:infoType,data: { idx: any; _imgData: any; },palet: 
   
     _imgData.map((item: any) => {
         if(palet[item]){
-
         var pix = (palet[item] as any).map((p: string | number) => {
             p = p.toString(16)
             if (Number(p) < 10) {
@@ -106,7 +105,6 @@ const filleImgPixel =  (prop:infoType,data: { idx: any; _imgData: any; },palet: 
         new Jimp(width, height, function (err: any, image: any) {
             if (err){
                 reject(err)
-                
             }
                 
             arrTrans(width, imgData).forEach((row: any[], y: number) => {

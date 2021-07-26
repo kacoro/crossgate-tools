@@ -22,7 +22,7 @@ const fs = require('fs')
 const { dialog } = require('electron').remote;
 const path = require('path')
 import * as actionTypes from "../../Store/actionTypes"
-import { selectFolder,simulateAsyncRequest } from "../../store/actionCreators"
+import { selectFolder,simulateAsyncRequest } from "../../Store/actionCreators"
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,

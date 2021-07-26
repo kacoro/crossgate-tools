@@ -203,7 +203,7 @@ export const myInfoList: infoType = {
 export function decodeImgData(graph: any[], len: number) {
 
     let p: any[] = []
-
+    console.log(graph)
     // 图片解密 Run-Length压缩
     var iPos = 0;
     var idx = 0;
