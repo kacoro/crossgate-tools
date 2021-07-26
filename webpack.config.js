@@ -101,7 +101,7 @@ const productionConfig = {
   }
 }
 let config = devConfig
-if (process.env.NODE_ENV == "production") {
+if (process.env.NODE_ENV !== "development") {
   config = Object.assign({},devConfig, productionConfig)
 } else {
   config = devConfig

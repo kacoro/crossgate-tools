@@ -31,6 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
         leftSide: {
             padding: '10px',
             width: "280px",
+            minWidth:"280px",
             overflowX: 'hidden',
             overflowY: 'auto'
         },
@@ -134,66 +135,11 @@ export function InfoList(props: Props) {
     const [graphicInfo, SetGraphicInfo] = useState(Buffer.allocUnsafe(0));
     const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
     const [image, SetImage] = useState({} as Bitmap);
-    useEffect(function checkGraphicInfo() {
-        if (graphicInfo.length != 0) {
-
-        }
-    }, [graphicInfo]);
-
-    const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
-        version: '',
-        imageId: 0,
-    });
-    const [dbValue, saveToDb] = useState(0);
-
-  //切换版本
-  useEffect(function checkVersion() {
-    if (folder != '' && currentPalet != "" && state.version != "") {
-        //查找图片信息
-        let data = readGraphicInfo(folder, state.version);
-
-        SetAccount({
-            ...acount,
-            'value': data.length,
-        })
-        console.log("buffer",data.graphicInfo)
-        SetGraphicInfo(data.graphicInfo)
-        SetGraphic(data.graphic)
-    }
-
-}, [state.version]);
-    //获取图片信息
-    useEffect(function checkGraphicID() {
-        if (graphicInfo.length != 0) {
-            let info: infoType = getImageInfo(dbValue, graphicInfo);
-            SetInfos(info)
-        }
-    }, [dbValue, graphicInfo,state.version])
-
-
-    // 获取图片
-    useEffect(function checkGraphicInfo() {
-        if (graphicInfo.length != 0) {
-            (async () => {
-                let image: any = await getImage(infos, graphic, palets)
-                //console.log(image);
-                if (image && image.width > 0) {
-                    SetImage(image)
-                }
-            })();
-        }
-    }, [infos,palets]);
-
-  
 
     const debouncedSaveByCallBack:Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50),[],); // will be created only once initially
   
-
     const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
         const name = event.target.name as keyof typeof state;
-       
-        
-       
         if(name == 'imageId'){
             let value = Number(event.target.value);
             if(value<0){
@@ -208,13 +154,59 @@ export function InfoList(props: Props) {
             });
             debouncedSaveByCallBack(value);
         }   else{
+            //释放内存
+            SetGraphicInfo(Buffer.allocUnsafe(0))
+            SetGraphic(Buffer.allocUnsafe(0))
             setState({
                 ...state,
                 [name]: event.target.value as string,
             });
         }
-        
     };
+
+    const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
+        version: '',
+        imageId: 0,
+    });
+    const [dbValue, saveToDb] = useState(0);
+
+  //切换版本 获取二进制图片信息和图片数据
+  useEffect(function checkVersion() {
+
+    if (folder != '' && currentPalet != "" && state.version != "") {
+        
+        //查找图片信息
+        let data = readGraphicInfo(folder, state.version);
+        
+        SetAccount({
+            ...acount,
+            'value': data.length,
+        })
+        SetGraphicInfo(info=> {return data.graphicInfo})
+         SetGraphic(grahic=>data.graphic)
+    }
+
+}, [state.version]);
+    //获取图片信息
+    useEffect(function checkGraphicID() {
+        if (graphicInfo.length != 0) {
+            let info: infoType = getImageInfo(dbValue, graphicInfo);
+            SetInfos(info)
+        }
+    }, [dbValue, graphicInfo])
+
+    // 获取图片数据
+    useEffect(function checkGraphicInfo() {
+        if (graphicInfo.length != 0&&infos) {
+            (async () => {
+                let image: any = await getImage(infos, graphic, palets)
+                //console.log(image);
+                if (image && image.width > 0) {
+                    SetImage(image)
+                }
+            })();
+        }
+    }, [infos,palets]);
 
     //生成图片
     useEffect(() => {
@@ -235,6 +227,7 @@ export function InfoList(props: Props) {
             context.putImageData(imageData, (width-image.width)/2, (height-image.height)/2);
         }
     }, [image]);
+
     return (
         <div className={classes.root}>
             <div className={classes.leftSide}>
