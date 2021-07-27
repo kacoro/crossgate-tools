@@ -6,7 +6,7 @@ const jimp: Jimp = require('jimp')
 import { g_ImgMap, transBuffer, decodeImgData, arrTrans } from "./config";
 
 //获取图片集信息，图片集数据
-export const readGraphicInfo = (binPath: string, version: any) => {
+export const readGraphicInfo = async (binPath: string, version: any) => {
     let graphicInfo = readFileSync(path.join(binPath, "bin", g_ImgMap[version].info))
     let graphic = readFileSync(path.join(binPath, "bin", g_ImgMap[version].file))
     let length = graphicInfo.length / 40
@@ -46,9 +46,11 @@ const readStream = (stream: ReadStream): Promise<Buffer> => new Promise((resolve
 //获取单张图片信息
 export function getImageInfo(i: number, graphicInfo: Buffer) {
 
-    // let buf1 = Buffer.allocUnsafe(40);
-    // graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
-    let buf1 = graphicInfo.subarray(i * 40, (i + 1) * 40)
+    let buf1 = Buffer.allocUnsafe(40);
+    graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
+   
+    // let buf1 = graphicInfo.subarray(i * 40, (i + 1) * 40)
+    console.log(i,buf1,graphicInfo)
     var json = getInfo(i * 40, buf1);
     return json
 }
@@ -61,16 +63,20 @@ interface infoType {
 export async function getImage(infoJson: infoType, graphics: Buffer, palet: Buffer) {
 
     if (!infoJson) return false
+    let head = graphics.subarray(infoJson.ddr, infoJson.ddr + 16);
+    let graphic = graphics.subarray(infoJson.ddr + 16, infoJson.ddr + infoJson.length)
     //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
     // let head = Buffer.allocUnsafe(16);
     // graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
-    let head = graphics.subarray(infoJson.ddr, infoJson.ddr + 16);
+   
     // let graphic  = Buffer.allocUnsafe(infoJson.length-16);
-    let graphic = graphics.subarray(infoJson.ddr + 16, infoJson.ddr + infoJson.length)
+    
     // graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
     let version = head[2]
+    console.log(head)
+    console.log(graphic)
     // var image = null;
-    if (version == 1 || version == 3) {// 压缩的图片
+    if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
         var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - 16)
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         let image = await filleImgPixel(infoJson, imageData, palet)
@@ -127,6 +133,7 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
                     return p;
                 }
             }).join('');
+           
             imgData.push(pix != '' ? '#' + pix : '#0x000000');
         }
         else { //有些图片位置读取不到调色板，这里跳过

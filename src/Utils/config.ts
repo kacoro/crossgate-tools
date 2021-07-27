@@ -105,7 +105,7 @@ interface binArraryType {
     [index:number]:string | number| any
  } 
 export const arrTrans =(num:number, arr:Array<any>) => { // 一维数组转换为二维数组
-	const iconsArr:binArraryType = []; // 声明数组
+	const iconsArr: any[][] = []; // 声明数组
 	arr.forEach((item, index) => {
 	  const page = Math.floor(index / num); // 计算该元素为第几个素组内
 	  if (!iconsArr[page]) { // 判断是否存在
@@ -231,16 +231,16 @@ export function decodeImgData(graph: any[], len: number) {
         let condistion = (p[iPos] & 0xf0).toString(16)
 
         switch (condistion) {
-            case '0': {
+            case '0': { //0n 长度为n的字符串
                 let count = p[iPos] & 0x0f;
-                iPos++
+                ++iPos;
                 //console.log('s 0 , '+p[iPos] +' count:' ,count)
                 for (let i = 0; i < count; ++i) {
                     _imgData[idx++] = graph[iPos++]
                 }
             }
                 break
-            case '10': {
+            case '10': {//1n 长度为n*0x100+m的字符串
                 let count = (p[iPos] & 0x0f) * 0x100 + Number(p[iPos + 1]);
                 iPos += 2
                 //console.log('s 10 , '+p[iPos] +' '+p[iPos + 1]+' count:' ,count)
@@ -315,7 +315,7 @@ export function decodeImgData(graph: any[], len: number) {
             }
                 break
             default:
-                iPos++;
+                // iPos++;
                 break
         }
     }

@@ -13,13 +13,16 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import InputBase from '@material-ui/core/InputBase';
 import IconButton from '@material-ui/core/IconButton';
+import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readGraphicInfo, getImageInfo, getImage ,readGraphicInfoByStream} from '../../Utils/readImages'
+import { readGraphicInfo, getImageInfo, getImage, readGraphicInfoByStream } from '../../Utils/readImages'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList } from '../../Utils/config'
 import MainCanvas from '../MainCanvas'
 import { throttle, debounce } from '@kacoro/utils'
+import { exportCanvasAsPNG, MIME_TYPE } from "../../Utils/canvas"
+import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
@@ -33,7 +36,8 @@ const useStyles = makeStyles((theme: Theme) =>
             width: "280px",
             minWidth: "280px",
             overflowX: 'hidden',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            backgroundColor: theme.palette.background.paper,
         },
         Container: {
             flex: 1
@@ -134,7 +138,7 @@ export function InfoList(props: Props) {
 
     // const [graphicInfo, SetGraphicInfo] = useState(Buffer.allocUnsafe(0));
     // const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
-  
+    const [checked, setChecked] = React.useState(true);
     const graphicInfo = useRef(Buffer.allocUnsafe(0))
     const graphic = useRef(Buffer.allocUnsafe(0))
     const [image, SetImage] = useState({} as Bitmap);
@@ -146,7 +150,9 @@ export function InfoList(props: Props) {
 
     const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50), [],); // will be created only once initially
 
-
+    const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
+        setChecked(event.target.checked);
+    };
     const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
         const name = event.target.name as keyof typeof state;
         if (name == 'imageId') {
@@ -157,7 +163,7 @@ export function InfoList(props: Props) {
             if (value >= acount.value) {
                 value = 0
             }
-            
+
             setState({
                 ...state,
                 [name]: value,
@@ -179,28 +185,27 @@ export function InfoList(props: Props) {
 
     //切换版本 获取二进制图片信息和图片数据
     useEffect(function checkVersion() {
-         
+
         if (folder != '' && currentPalet != "" && state.version != "") {
             //查找图片信息
             //  let data = readGraphicInfo(folder, state.version);
             //  console.log(data);
-            graphicInfo.current = null;
-            graphic.current = null;
+
             (async () => {
                 console.log("test")
+                graphicInfo.current = null;
+                graphic.current = null;
                 // let data = await readGraphicInfoByStream(folder, state.version)
                 let data = await readGraphicInfo(folder, state.version);
                 SetAccount({
                     ...acount,
                     'value': data.length,
                 })
-                
-                 graphicInfo.current = data.graphicInfo
-              
-                  graphic.current = data.graphic 
-             
+                graphicInfo.current = data.graphicInfo
+                graphic.current = data.graphic
+
             })();
-         
+
             // SetGraphicInfo(info=> {return data.graphicInfo})
             //  SetGraphic(grahic=>data.graphic)
         }
@@ -208,8 +213,8 @@ export function InfoList(props: Props) {
     }, [state.version]);
     //获取图片信息
     useEffect(function checkGraphicID() {
-        if (graphicInfo.current&&graphicInfo.current.length != 0) {
-            console.log(graphicInfo)
+        if (graphicInfo.current && graphicInfo.current.length != 0) {
+
             let info: infoType = getImageInfo(dbValue, graphicInfo.current);
             SetInfos(info)
         }
@@ -217,7 +222,7 @@ export function InfoList(props: Props) {
 
     // 获取图片数据
     useEffect(function checkGraphicInfo() {
-        if (graphic.current&&graphic.current.length != 0 && infos) {
+        if (graphic.current && graphic.current.length != 0 && infos) {
             (async () => {
                 let image: any = await getImage(infos, graphic.current, palets)
                 //console.log(image);
@@ -244,9 +249,34 @@ export function InfoList(props: Props) {
                 image.height
             );
 
+
             context.putImageData(imageData, (width - image.width) / 2, (height - image.height) / 2);
+
+            const test = () => {
+                context.globalCompositeOperation = "lighter"; //destination-atop destination-over lighter
+                context.fillStyle = "#000000"
+                context.fillRect((width - image.width * 2) / 2, (height - image.height * 2) / 2, image.width * 2, image.height * 2);
+            }
+
+
         }
     }, [image]);
+
+
+
+    const handleSave = () => {
+        let fileName = 'testImg';
+        let mimeType:MIME_TYPE = "image/bmp";
+        if(checked){//为真表示透明，直接存为png
+
+            mimeType = "image/png";
+            fileName +='.png';
+        }else{//为假保存位bmp
+            mimeType = "image/bmp";
+            fileName +='.bmp';
+        }
+        exportCanvasAsPNG(mimeType, canvas.current, fileName, image)
+    }
 
     return (
         <div className={classes.root}>
@@ -303,6 +333,21 @@ export function InfoList(props: Props) {
                         <Add color="primary" />
                     </IconButton>
                 </Paper>
+                <Card>
+                    {image.data && <Button color="primary" onClick={handleSave}>保存</Button>}
+
+                    <FormControlLabel
+                        label="背景透明"
+                        control={
+                            <Checkbox
+                                defaultChecked
+                                color="primary"
+                                onChange={handleChangeChecked}
+                                inputProps={{ 'aria-label': '背景透明' }}
+                            />
+                        }
+                    />
+                </Card>
 
                 <List >
                     <Grid container spacing={1} className={classes.grid}>
@@ -318,7 +363,7 @@ export function InfoList(props: Props) {
                 </List>
             </div>
             <div className={classes.Container} ref={container}>
-                <canvas ref={canvas} ></canvas>
+                <canvas ref={canvas}  ></canvas>
             </div>
         </div>
     );
