@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect,useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -15,11 +15,11 @@ import InputBase from '@material-ui/core/InputBase';
 import IconButton from '@material-ui/core/IconButton';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readGraphicInfo, getImageInfo, getImage } from '../../Utils/readImages'
+import { readGraphicInfo, getImageInfo, getImage ,readGraphicInfoByStream} from '../../Utils/readImages'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList } from '../../Utils/config'
 import MainCanvas from '../MainCanvas'
-import {throttle,debounce} from '@kacoro/utils'
+import { throttle, debounce } from '@kacoro/utils'
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
@@ -31,7 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
         leftSide: {
             padding: '10px',
             width: "280px",
-            minWidth:"280px",
+            minWidth: "280px",
             overflowX: 'hidden',
             overflowY: 'auto'
         },
@@ -67,7 +67,7 @@ const useStyles = makeStyles((theme: Theme) =>
             marginLeft: theme.spacing(1),
             flex: 1,
             textAlign: "center",
-            
+
         },
         iconButton: {
             padding: 10,
@@ -129,34 +129,45 @@ export function InfoList(props: Props) {
     const [versions] = useState(g_ImgMap);
     const [acount, SetAccount] = useState({ key: 'acount', name: '图片总数', value: 0 })
     const [infos, SetInfos] = useState(null);
-    const canvas = React.useRef(null)
-    const container = React.useRef(null)
-  
-    const [graphicInfo, SetGraphicInfo] = useState(Buffer.allocUnsafe(0));
-    const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
-    const [image, SetImage] = useState({} as Bitmap);
+    const canvas = useRef(null)
+    const container = useRef(null)
 
-    const debouncedSaveByCallBack:Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50),[],); // will be created only once initially
+    // const [graphicInfo, SetGraphicInfo] = useState(Buffer.allocUnsafe(0));
+    // const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
   
+    const graphicInfo = useRef(Buffer.allocUnsafe(0))
+    const graphic = useRef(Buffer.allocUnsafe(0))
+    const [image, SetImage] = useState({} as Bitmap);
+    const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
+        version: '',
+        imageId: 17550,
+    });
+    const [dbValue, saveToDb] = useState(17550);
+
+    const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50), [],); // will be created only once initially
+
+
     const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
         const name = event.target.name as keyof typeof state;
-        if(name == 'imageId'){
+        if (name == 'imageId') {
             let value = Number(event.target.value);
-            if(value<0){
+            if (value < 0) {
                 value = acount.value - 1
             }
-            if(value>= acount.value){
+            if (value >= acount.value) {
                 value = 0
             }
+            
             setState({
                 ...state,
                 [name]: value,
             });
             debouncedSaveByCallBack(value);
-        }   else{
+        } else {
             //释放内存
-            SetGraphicInfo(Buffer.allocUnsafe(0))
-            SetGraphic(Buffer.allocUnsafe(0))
+            // SetGraphicInfo(Buffer.allocUnsafe(0))
+            // SetGraphic(Buffer.allocUnsafe(0))
+
             setState({
                 ...state,
                 [name]: event.target.value as string,
@@ -164,49 +175,58 @@ export function InfoList(props: Props) {
         }
     };
 
-    const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
-        version: '',
-        imageId: 0,
-    });
-    const [dbValue, saveToDb] = useState(0);
 
-  //切换版本 获取二进制图片信息和图片数据
-  useEffect(function checkVersion() {
 
-    if (folder != '' && currentPalet != "" && state.version != "") {
-        
-        //查找图片信息
-        let data = readGraphicInfo(folder, state.version);
-        
-        SetAccount({
-            ...acount,
-            'value': data.length,
-        })
-        SetGraphicInfo(info=> {return data.graphicInfo})
-         SetGraphic(grahic=>data.graphic)
-    }
+    //切换版本 获取二进制图片信息和图片数据
+    useEffect(function checkVersion() {
+         
+        if (folder != '' && currentPalet != "" && state.version != "") {
+            //查找图片信息
+            //  let data = readGraphicInfo(folder, state.version);
+            //  console.log(data);
+            graphicInfo.current = null;
+            graphic.current = null;
+            (async () => {
+                console.log("test")
+                // let data = await readGraphicInfoByStream(folder, state.version)
+                let data = await readGraphicInfo(folder, state.version);
+                SetAccount({
+                    ...acount,
+                    'value': data.length,
+                })
+                
+                 graphicInfo.current = data.graphicInfo
+              
+                  graphic.current = data.graphic 
+             
+            })();
+         
+            // SetGraphicInfo(info=> {return data.graphicInfo})
+            //  SetGraphic(grahic=>data.graphic)
+        }
 
-}, [state.version]);
+    }, [state.version]);
     //获取图片信息
     useEffect(function checkGraphicID() {
-        if (graphicInfo.length != 0) {
-            let info: infoType = getImageInfo(dbValue, graphicInfo);
+        if (graphicInfo.current&&graphicInfo.current.length != 0) {
+            console.log(graphicInfo)
+            let info: infoType = getImageInfo(dbValue, graphicInfo.current);
             SetInfos(info)
         }
-    }, [dbValue, graphicInfo])
+    }, [dbValue, graphicInfo.current])
 
     // 获取图片数据
     useEffect(function checkGraphicInfo() {
-        if (graphicInfo.length != 0&&infos) {
+        if (graphic.current&&graphic.current.length != 0 && infos) {
             (async () => {
-                let image: any = await getImage(infos, graphic, palets)
+                let image: any = await getImage(infos, graphic.current, palets)
                 //console.log(image);
                 if (image && image.width > 0) {
                     SetImage(image)
                 }
             })();
         }
-    }, [infos,palets]);
+    }, [infos, palets]);
 
     //生成图片
     useEffect(() => {
@@ -223,8 +243,8 @@ export function InfoList(props: Props) {
                 image.width,
                 image.height
             );
-           
-            context.putImageData(imageData, (width-image.width)/2, (height-image.height)/2);
+
+            context.putImageData(imageData, (width - image.width) / 2, (height - image.height) / 2);
         }
     }, [image]);
 
@@ -250,15 +270,15 @@ export function InfoList(props: Props) {
                     </Select>
                 </FormControl>
                 <Paper component="form" className={classes.search} >
-                    <IconButton onClick={() =>{
-                            let value = state.imageId > 0 ? Number(state.imageId) - 1 : acount.value - 1
-                            setState({
-                                ...state,
-                                "imageId": value
-                            })
-                            debouncedSaveByCallBack(value)
-                        }}>
-                        <Remove color="primary"  />
+                    <IconButton onClick={() => {
+                        let value = state.imageId > 0 ? Number(state.imageId) - 1 : acount.value - 1
+                        setState({
+                            ...state,
+                            "imageId": value
+                        })
+                        debouncedSaveByCallBack(value)
+                    }}>
+                        <Remove color="primary" />
                     </IconButton>
                     <InputBase id="filled-basic" className={classes.input} placeholder="物理编号"
                         inputProps={{ 'aria-label': '物理编号' }} onKeyDown={(event) => {
@@ -271,16 +291,16 @@ export function InfoList(props: Props) {
                             }
                         }} type="number" value={state.imageId} name="imageId" onChange={handleChange} />
                     <IconButton onClick={() => {
-                             let value =  state.imageId >= acount.value - 1 ? 0 : Number(state.imageId) + 1;
-                             setState({
-                                 ...state,
-                                 "imageId":value
-                             })
-                             debouncedSaveByCallBack(value)
-                            }
-                       
-                        }>
-                        <Add color="primary"  />
+                        let value = state.imageId >= acount.value - 1 ? 0 : Number(state.imageId) + 1;
+                        setState({
+                            ...state,
+                            "imageId": value
+                        })
+                        debouncedSaveByCallBack(value)
+                    }
+
+                    }>
+                        <Add color="primary" />
                     </IconButton>
                 </Paper>
 
@@ -297,7 +317,7 @@ export function InfoList(props: Props) {
                     ))}
                 </List>
             </div>
-            <div className={classes.Container}  ref={container}>
+            <div className={classes.Container} ref={container}>
                 <canvas ref={canvas} ></canvas>
             </div>
         </div>

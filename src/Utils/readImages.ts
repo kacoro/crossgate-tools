@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, createReadStream, ReadStream } from 'fs';
 import path from 'path';
 import Jimp from 'jimp'
 // tslint:disable-next-line: no-var-requires
@@ -13,12 +13,42 @@ export const readGraphicInfo = (binPath: string, version: any) => {
     return { graphicInfo, length, graphic }
 }
 
+//使用steam获取图片集信息，图片集数据
+export const readGraphicInfoByStream = async (binPath: string, version: any) => {
+    let graphicInfoStream = createReadStream(path.join(binPath, "bin", g_ImgMap[version].info))
+    let graphicStream = createReadStream(path.join(binPath, "bin", g_ImgMap[version].file))
+    let graphicInfo = await readStream(graphicInfoStream)
+   
+    let graphic = await readStream(graphicStream)
+    
+     length = graphicInfo.length / 40
+   
+    return { graphicInfo, length, graphic }
+}
+
+const readStream = (stream: ReadStream): Promise<Buffer> => new Promise((resolve, reject) => {
+    let buffers: any[] = [];
+    stream.on('data', data => {
+        buffers.push(data)
+    });
+    //读取完成
+    stream.on('end', () => {
+        console.log("finish")
+        resolve(Buffer.concat(buffers))
+    })
+    //失败
+    stream.on('error', () => {
+        reject(Buffer.allocUnsafe(0))
+    })
+})
+
+
 //获取单张图片信息
 export function getImageInfo(i: number, graphicInfo: Buffer) {
 
     // let buf1 = Buffer.allocUnsafe(40);
     // graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
-    let buf1 = graphicInfo.subarray( i * 40, (i + 1) * 40)
+    let buf1 = graphicInfo.subarray(i * 40, (i + 1) * 40)
     var json = getInfo(i * 40, buf1);
     return json
 }
@@ -29,8 +59,8 @@ interface infoType {
 
 //获取单子图片数据
 export async function getImage(infoJson: infoType, graphics: Buffer, palet: Buffer) {
-   
-    if(!infoJson) return false
+
+    if (!infoJson) return false
     //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
     // let head = Buffer.allocUnsafe(16);
     // graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
@@ -44,7 +74,7 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet: Buff
         var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - 16)
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         let image = await filleImgPixel(infoJson, imageData, palet)
-        console.log(image)
+        // console.log(image)
         return image
     } else {
 
@@ -99,7 +129,7 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
             }).join('');
             imgData.push(pix != '' ? '#' + pix : '#0x000000');
         }
-        else{ //有些图片位置读取不到调色板，这里跳过
+        else { //有些图片位置读取不到调色板，这里跳过
             imgData.push('#0x00000');
         }
 
