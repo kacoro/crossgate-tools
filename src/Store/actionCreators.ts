@@ -1,17 +1,25 @@
 import * as actionTypes from "./actionTypes"
 import {readGraphicInfo} from "../Utils/readImages";
-import {readPalet} from "../Utils/readPalets";
-export const selectFolder = (folder: any) => {
+import {readPalet,readAllPalet, paletType} from "../Utils/readPalets";
+export const selectFolder = (folder: any,allPalet:paletType[]) => {
     return {
       type: actionTypes.SELECT_FOLDER,
-      folder,
+      folder,allPalet
     }
   }
 
-export const selectPalet = (palet: any,palets:any[]) => {
+export const selectPalet = (palet: any,palets:any[]=[]) => {
   return {
     type: actionTypes.SELECT_PALET,
     palet,palets
+  }
+}
+
+export const ReadPaletsAsyncRequest =  (folder: any) => {
+  return (dispatch:any) => {
+     let allPalet =  readAllPalet(folder)
+     console.log(allPalet)
+     dispatch(selectFolder(folder,allPalet))
   }
 }
 

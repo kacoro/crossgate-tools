@@ -46,13 +46,15 @@ const readStream = (stream: ReadStream): Promise<Buffer> => new Promise((resolve
 //获取单张图片信息
 export function getImageInfo(i: number, graphicInfo: Buffer) {
 
-    let buf1 = Buffer.allocUnsafe(40);
-    graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
+        let buf1 = Buffer.allocUnsafe(40);
+        graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
+        var json = getInfo(i * 40, buf1);
+        return json
+    
    
     // let buf1 = graphicInfo.subarray(i * 40, (i + 1) * 40)
-    console.log(i,buf1,graphicInfo)
-    var json = getInfo(i * 40, buf1);
-    return json
+    
+    
 }
 
 interface infoType {
@@ -60,30 +62,52 @@ interface infoType {
 }
 
 //获取单子图片数据
-export async function getImage(infoJson: infoType, graphics: Buffer, palet: Buffer) {
-
-    if (!infoJson) return false
-    let head = graphics.subarray(infoJson.ddr, infoJson.ddr + 16);
-    let graphic = graphics.subarray(infoJson.ddr + 16, infoJson.ddr + infoJson.length)
-    //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
-    // let head = Buffer.allocUnsafe(16);
-    // graphics.copy(head,0, infoJson.ddr, infoJson.ddr + 16);
-   
-    // let graphic  = Buffer.allocUnsafe(infoJson.length-16);
+export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) {
     
-    // graphics.copy(graphic,0, infoJson.ddr+ 16, infoJson.ddr +  infoJson.length);
+    if (!infoJson) return false
+    // let head = graphics.subarray(infoJson.ddr, infoJson.ddr + 16);
+    // let graphic = graphics.subarray(infoJson.ddr + 16, infoJson.ddr + infoJson.length)
+    //根据起点位置，和i长度找到图片源，再根据调色板获取最终的颜色
+    let headLength = 16
+     let head = Buffer.allocUnsafe(headLength);
+    graphics.copy(head,0, infoJson.ddr, infoJson.ddr + headLength);
+   
+     let graphic  = Buffer.allocUnsafe(infoJson.length-headLength);
+     
+     graphics.copy(graphic,0, infoJson.ddr+ headLength, infoJson.ddr +  infoJson.length);
     let version = head[2]
-    console.log(head)
-    console.log(graphic)
+    let localPaletInfo = {
+        version :version,
+        length:0
+    }
+    console.log(version)
+    
+    if(version>=2){//版本大于2或3，说明使用自带调色板 调色板长度为4 通常为0x300，即256*3=768
+         headLength = 20
+         let paletHead = Buffer.allocUnsafe(4);
+         graphics.copy(paletHead,0,infoJson.ddr + 16, infoJson.ddr + 20);
+         let paletLength = transBuffer(paletHead)
+         localPaletInfo.length =  paletLength
+         console.log(paletHead,paletLength) //0300=>768
+         graphic = Buffer.allocUnsafe(infoJson.length-20);
+         graphics.copy(graphic,0,infoJson.ddr + 20, infoJson.ddr + infoJson.length)
+
+    }
     // var image = null;
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
-        var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - 16)
+        
+        var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - headLength)
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
-        let image = await filleImgPixel(infoJson, imageData, palet)
+        let image = await filleImgPixel(infoJson, imageData, palet,localPaletInfo)
         // console.log(image)
         return image
     } else {
-
+        let imgData = { 
+            idx: graphic.length,
+            _imgData:graphic.toJSON().data 
+         }
+        let image = await filleImgPixel(infoJson, imgData, palet,localPaletInfo)
+        return image
     }
     // console.log(image)
     return false
@@ -114,10 +138,30 @@ interface paletType {
     [key: string]: any
 }
 
-const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet: Buffer) => {
+const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet: Buffer,localPaletInfo:any) => {
+    
     const { width, height } = prop;
-    const { _imgData, idx } = data;
-
+    var { _imgData, idx } = data;
+    if(localPaletInfo.version>=2){
+        console.log(localPaletInfo)
+        //处理palet
+        let _palet: any
+        _palet = Buffer.allocUnsafe(localPaletInfo.length);
+        try {
+            // _imgData.copy(_palet,0,_imgData.length-localPaletInfo.length,_imgData.length)
+            //    _palet =  _palet.toJSON().data
+            _palet = _imgData.slice(_imgData.length-localPaletInfo.length)
+            _imgData = _imgData.slice(0,_imgData.length-localPaletInfo.length)
+           
+           _palet = arrTrans(3, _palet)
+           _palet = _palet.map((item: any[])=>{
+           return item.reverse();
+           });
+           palet = _palet
+        } catch (error) {
+            console.log(error.message)
+        }
+   }
     var imgData: any[] = [];
 
     _imgData.map((item: any) => {
@@ -134,10 +178,10 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
                 }
             }).join('');
            
-            imgData.push(pix != '' ? '#' + pix : '#0x000000');
+             imgData.push(pix != '' ? '#' + pix : '#0x000000');
         }
         else { //有些图片位置读取不到调色板，这里跳过
-            imgData.push('#0x00000');
+             imgData.push('#0x000000');
         }
 
     })

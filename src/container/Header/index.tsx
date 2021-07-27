@@ -20,9 +20,11 @@ import { connect } from 'react-redux';
 
 const fs = require('fs')
 const { dialog } = require('electron').remote;
+import {clampNumber, g_palet} from '../../Utils/config';
 const path = require('path')
 import * as actionTypes from "../../Store/actionTypes"
-import { selectFolder,simulateAsyncRequest } from "../../Store/actionCreators"
+import {paletType} from "../../Utils/readPalets";
+import { selectFolder,simulateAsyncRequest,ReadPaletsAsyncRequest,selectPalet } from "../../Store/actionCreators"
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
@@ -55,15 +57,15 @@ folderText:{
 type Props = {
     folder?: string;
     palet?:string |number,
+    allPalet:paletType[],
     selectFolder: (folder:string) => void;
-    selectPalet: (folder:string,palet:string|number) => void;
+    selectPalet: (palet:string|number) => void;
   };
 
 
 export  function ProminentAppBar(props:Props) {
-    const { selectFolder,selectPalet } = props;
+    const { selectFolder,selectPalet,allPalet } = props;
    const classes = useStyles();
-
   const [state, setState] = React.useState<{ palet: string | number;folder:string }>({
     palet: localStorage.getItem('palet')||'',
     folder: localStorage.getItem('folder')||'',
@@ -73,18 +75,24 @@ export  function ProminentAppBar(props:Props) {
   useEffect( function folder() {
     // 👍 将条件判断放置在 effect 中
     if (state.folder !== '') {
+      
       localStorage.setItem('folder', state.folder);
+      console.log("select folder")
       //可以先读取所有调色板信息。并且缓存起来。使用redux
       selectFolder(state.folder);
     }
+     
+  },[state.folder]);
+
+  useEffect(() => {
     if (state.palet !== '') {
-        console.log("select palet")
-        localStorage.setItem('palet', state.palet.toString());
-        
-        selectPalet(state.folder,state.palet)
-        
-      }
-  });
+      console.log("select palet")
+      localStorage.setItem('palet', state.palet.toString());
+      
+      selectPalet(state.palet)
+      
+    }
+  }, [state.palet])
 
   const handleChange = (event: React.ChangeEvent<{ name?: string; value: unknown }>) => {
     const name = event.target.name as keyof typeof state;
@@ -92,6 +100,7 @@ export  function ProminentAppBar(props:Props) {
       ...state,
       [name]: event.target.value,
     });
+    
   };
 
   function handleOpenFolder(){
@@ -135,17 +144,20 @@ export  function ProminentAppBar(props:Props) {
                 <Select
                 native
                 value={state.palet}
-                onChange={handleChange}
+                 onChange={handleChange}
                 inputProps={{
                     name: 'palet',
                     id: 'palet-native',
                 }}
                 >
                 <option aria-label="None" value="" />
-                <option value={0}>白天</option>
-                <option value={1}>黄昏</option>
-                <option value={2}>黑夜</option>
-                <option value={3}>凌晨</option>
+                {/* {g_palet.map((item,index)=>
+                  <option key={index} value={index}>{item.name}</option>
+                )} */}
+                {allPalet.map((item,index)=>
+                  <option key={index} value={index}>{item.name}</option>
+                )}
+               
                 </Select>
               
             </FormControl>
@@ -161,16 +173,20 @@ export  function ProminentAppBar(props:Props) {
   );
 }
 
-const mapStateToProps = (state: { articles: any; }) => {
+const mapStateToProps = (state: {  allPalet: any; articles: any; }) => {
     return {
+      // folder:state.folder,
+      // allPalet:state.allPalet,
       articles: state.articles,
+      allPalet:state.allPalet
     }
   }
   const mapDispatchToProps = (dispatch:any) => {
     return {
-        selectFolder: (folder: any) =>dispatch(selectFolder(folder)),  // dispatch({ type: actionTypes.SELECT_FOLDER, data: folder }),
-        selectPalet: (folder: any,palet: any) =>
-        dispatch(simulateAsyncRequest(folder,palet)),
+        // selectFolder: (folder: any) =>dispatch(selectFolder(folder)),  // dispatch({ type: actionTypes.SELECT_FOLDER, data: folder }),
+        selectFolder: (folder: any) =>dispatch(ReadPaletsAsyncRequest(folder)),
+        selectPalet: (palet: any) =>
+        dispatch(selectPalet(palet)),
     }
   }
 export default connect(mapStateToProps,mapDispatchToProps)(ProminentAppBar)

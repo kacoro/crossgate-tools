@@ -86,8 +86,10 @@ export const g_c240_255 = [
 export const g_ImgMap = [
 	{name:"命运的开启者", info: "GraphicInfo_20.bin", file: "Graphic_20.bin" },			// 命运的开启者
 	{name:"龙之沙时计", info:"GraphicInfoEx_4.bin", file: "GraphicEx_4.bin" },		// 龙之沙时计
-	{name:"乐园之卵", info:"GraphicInfo_Joy_22.bin", file: "Graphic_Joy_22.bin" }	// 乐园之卵
-	
+	{name:"乐园之卵", info:"GraphicInfo_Joy_22.bin", file: "Graphic_Joy_22.bin" },	// 乐园之卵
+	{name:"乐园之卵（精灵)", info:"GraphicInfoV3_18.bin", file: "GraphicV3_18.bin" },	// 乐园之卵（精灵
+    // {name:"", info:".bin", file: ".bin" },
+    
 	//{ "GraphicInfoV3_18.bin", "GraphicV3_18.bin" }, // 乐园之卵（精灵
 	//{ "Puk2\\GraphicInfo_PUK2_2.bin", "Puk2\\Graphic_PUK2_2.bin"},
 	//{ "Puk3\\GraphicInfo_PUK3_1.bin", "Puk3\\Graphic_PUK3_1.bin" },
@@ -97,7 +99,19 @@ export const g_palet = [
 	 {name:'白天',value:'palet_00.cgp'},
 	 {name:'傍晚',value:'palet_01.cgp'},
 	 {name:'黑夜',value:'palet_02.cgp'},
-	 {name:'凌晨',value:'palet_03.cgp'}
+	 {name:'凌晨',value:'palet_03.cgp'},
+     {name:'4号',value:'palet_04.cgp'},
+     {name:'5号',value:'palet_05.cgp'},
+     {name:'6号',value:'palet_06.cgp'},
+     {name:'7号',value:'palet_07.cgp'},
+     {name:'8号',value:'palet_08.cgp'},
+     {name:'9号',value:'palet_09.cgp'},
+     {name:'10号',value:'palet_10.cgp'},
+     {name:'11号',value:'palet_11.cgp'},
+     {name:'12号',value:'palet_12.cgp'},
+     {name:'13号',value:'palet_13.cgp'},
+     {name:'14号',value:'palet_14.cgp'},
+     {name:'15号',value:'palet_15.cgp'},
 ];  
 
 interface binArraryType {
@@ -201,7 +215,7 @@ export const myInfoList: infoType = {
 };
 
 export function decodeImgData(graph: any[], len: number) {
-
+    
     let p: any[] = []
     // console.log(graph)
     // 图片解密 Run-Length压缩
@@ -229,7 +243,7 @@ export function decodeImgData(graph: any[], len: number) {
     while (iPos < len) {
 
         let condistion = (p[iPos] & 0xf0).toString(16)
-
+        
         switch (condistion) {
             case '0': { //0n 长度为n的字符串
                 let count = p[iPos] & 0x0f;
@@ -315,9 +329,11 @@ export function decodeImgData(graph: any[], len: number) {
             }
                 break
             default:
-                // iPos++;
+                //_imgData[idx++] = 0
+                iPos++;
                 break
         }
+       
     }
     //console.log(idx,iPos)
     return { idx, _imgData };

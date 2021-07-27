@@ -102,7 +102,6 @@ export const PaletList = (props: Props) =>{
         ctx.fillStyle = "rgb(255,165,0)";
         let index = 0;
         const fillRect = (x: number, y: number)=>{
-             console.log(palets[index].toString(16))
              let p = palets[index].toString(16)
              let style = `rgb(${p})`
               ctx.fillStyle = style;

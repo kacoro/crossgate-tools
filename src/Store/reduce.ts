@@ -1,3 +1,4 @@
+import { paletType } from "src/Utils/readPalets"
 import * as actionTypes from "./actionTypes"
 interface PaletsType{
     [index:number]:number | string
@@ -12,11 +13,12 @@ const initialState = {
       { id: 2, title: "post 2", body: "Quisque cursus, metus vitae pharetra" },
     ],
     palets :[] as PaletsType,
-    currentPalet:'',
+    currentPalet:'', //索引
     folder :"",
     currentVersion:'',
     imageList:[] as ImageList ,
-    currentImage:0
+    currentImage:0,
+    allPalet:[] as paletType[] 
   }
   
   const reducer = (state = initialState, action: any) => {
@@ -25,14 +27,14 @@ const initialState = {
             return {
                 ...state,
                 folder: action.folder,
+                allPalet:action.allPalet
               }
             
         case actionTypes.SELECT_PALET:
-          console.log(action)
             return {
                 ...state,
                     currentPalet: action.palet,
-                    palets:action.palets
+                    palets:state.allPalet[action.palet]?.data|| []
             }  
                    
         default:

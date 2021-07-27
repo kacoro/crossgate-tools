@@ -139,9 +139,9 @@ export function InfoList(props: Props) {
     const [image, SetImage] = useState({} as Bitmap);
     const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
         version: '',
-        imageId: 17550,
+        imageId: 0,
     });
-    const [dbValue, saveToDb] = useState(17550);
+    const [dbValue, saveToDb] = useState(0);
 
     const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50), [],); // will be created only once initially
 
@@ -211,7 +211,8 @@ export function InfoList(props: Props) {
         if (graphicInfo.current && graphicInfo.current.length != 0) {
 
             let info: infoType = getImageInfo(dbValue, graphicInfo.current);
-            SetInfos(info)
+             SetInfos(info)
+           
         }
     }, [dbValue, graphicInfo.current])
 
@@ -243,8 +244,6 @@ export function InfoList(props: Props) {
                 image.width,
                 image.height
             );
-
-
             context.putImageData(imageData, (width - image.width) / 2, (height - image.height) / 2);
 
             const test = () => {
@@ -252,18 +251,13 @@ export function InfoList(props: Props) {
                 context.fillStyle = "#000000"
                 context.fillRect((width - image.width * 2) / 2, (height - image.height * 2) / 2, image.width * 2, image.height * 2);
             }
-
-
         }
     }, [image]);
-
-
 
     const handleSave = () => {
         let fileName = 'testImg';
         let mimeType:MIME_TYPE = "image/bmp";
         if(checked){//为真表示透明，直接存为png
-
             mimeType = "image/png";
             fileName +='.png';
         }else{//为假保存位bmp
