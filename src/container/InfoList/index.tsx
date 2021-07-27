@@ -1,13 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
 import Grid from '@material-ui/core/Grid';
-
 import Paper from '@material-ui/core/Paper';
-import ChevronLeft from '@material-ui/icons/ChevronLeft';
-import ChevronRight from '@material-ui/icons/ChevronRight';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
