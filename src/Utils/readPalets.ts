@@ -1,10 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+const { dialog } = require('electron').remote;
 import { g_c0_15, g_c240_255, g_palet, transBuffer, arrTrans } from "./config";
+import { PaletsType } from '../Store/reduce';
 export const readPalet = (binPath: string, index: number) => {
     let palet: any
     try {
         palet = fs.readFileSync(path.join(binPath, "bin", "pal", g_palet[index].value))
+        
         palet = palet.slice(0, palet.length - 13 * 3).toJSON().data
         
         palet = [...g_c0_15, ...palet, ...g_c240_255]
@@ -55,8 +58,9 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
         files.forEach((filename, index) => { // item: 目录和文件名称
             if(filename.includes(suffix)){
                 let data: any
-                console.log(path.join(paletsPath,filename));
+                
                 data = fs.readFileSync(path.join(paletsPath,filename))
+                console.log(data)
                 data = data.slice(0, data.length - 13 * 3).toJSON().data
                 data = [...g_c0_15, ...data, ...g_c240_255]
                 data = arrTrans(3, data)
@@ -72,4 +76,24 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
         })
 
     return allPalet;
+}
+
+export const SavePalet = (palet: PaletsType[]  ) =>{
+    palet = palet.map((item)=>{
+        return item.reverse();
+    });
+    console.log(palet)
+    palet =  palet.slice(16, palet.length - 16+13)
+    console.log(palet)
+    let flatPalet =  palet.reduce((acc, val) => acc.concat(val), []);
+    // flatPalet = flatPalet.slice(0, flatPalet.length - 15*3)
+    console.log(flatPalet);
+    dialog.showSaveDialog({
+        title:'保存文件',
+    }).then((res)=>{
+        console.log(res)
+        fs.writeFileSync(res.filePath,Buffer.from(flatPalet))
+    }).catch((req)=>{
+        console.log(req)
+    })
 }

@@ -4,6 +4,7 @@ import Jimp from 'jimp'
 // tslint:disable-next-line: no-var-requires
 const jimp: Jimp = require('jimp')
 import { g_ImgMap, transBuffer, decodeImgData, arrTrans } from "./config";
+import { PaletsType } from '../Store/reduce';
 
 //获取图片集信息，图片集数据
 export const readGraphicInfo = async (binPath: string, version: any) => {
@@ -138,7 +139,7 @@ interface paletType {
     [key: string]: any
 }
 
-const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet: Buffer,localPaletInfo:any) => {
+const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet: PaletsType[],localPaletInfo:any) => {
     
     const { width, height } = prop;
     var { _imgData, idx } = data;
@@ -166,7 +167,7 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
 
     _imgData.map((item: any) => {
         if (palet[item]) {
-            var pix = (palet[item] as any).map((p: string | number) => {
+            var pix = (palet[item] ).map((p:number|string) => {
                 p = p.toString(16)
                 if (Number(p) < 10) {
                     p = '0' + p

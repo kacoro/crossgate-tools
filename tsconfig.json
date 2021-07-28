@@ -6,6 +6,7 @@
       "allowSyntheticDefaultImports": true,
       "moduleResolution": "node",
       "module": "es6",
+      // "lib": ["es2019"], // 只引入es6的库文件，不引入dom的库文件
       "target": "es5",
       "jsx": "react",
       "allowJs": true,

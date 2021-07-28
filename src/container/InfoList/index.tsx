@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo,useState, useRef, useEffect, useCallback } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import Grid from '@material-ui/core/Grid';
@@ -18,6 +18,7 @@ import MainCanvas from '../MainCanvas'
 import { throttle, debounce } from '@kacoro/utils'
 import { exportCanvasAsPNG, MIME_TYPE } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
+import PaletEditor from '../PaletEditor'
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
@@ -33,6 +34,16 @@ const useStyles = makeStyles((theme: Theme) =>
             overflowX: 'hidden',
             overflowY: 'auto',
             backgroundColor: theme.palette.background.paper,
+            boxShadow:"0px 5px 2px -1px rgb(0 0 0 / 50%), 0px 10px 1px 0px rgb(0 0 0 / 30%), 0px 10px 6px 0px rgb(0 0 0 / 12%)"
+        },
+        rightSide: {
+            padding: '10px',
+            width: "280px",
+            minWidth: "280px",
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            backgroundColor: theme.palette.background.paper,
+            boxShadow:"0px 5px 2px -1px rgb(0 0 0 / 50%), 0px 10px 1px 0px rgb(0 0 0 / 30%), 0px 10px 6px 0px rgb(0 0 0 / 12%)"
         },
         Container: {
             flex: 1
@@ -111,7 +122,8 @@ interface infoType {
 type Props = {
     folder?: string;
     currentPalet?: string | number,
-    palets: Buffer
+    palets: Buffer,
+    tempPalet:Buffer
 };
 type evenType = {
     name?: string;
@@ -123,7 +135,7 @@ export interface Bitmap {
     height: number;
 }
 export function InfoList(props: Props) {
-    const { folder, palets, currentPalet } = props
+    const { folder, palets, currentPalet ,tempPalet} = props
     const classes = useStyles();
     const [versions] = useState(g_ImgMap);
     const [acount, SetAccount] = useState({ key: 'acount', name: '图片总数', value: 0 })
@@ -142,7 +154,12 @@ export function InfoList(props: Props) {
         imageId: 0,
     });
     const [dbValue, saveToDb] = useState(0);
-
+    const myPalet = useMemo(() => {
+        if(tempPalet.length>0){
+            return tempPalet
+        } 
+        return palets
+    }, [palets,tempPalet])
     const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50), [],); // will be created only once initially
 
     const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
@@ -220,14 +237,19 @@ export function InfoList(props: Props) {
     useEffect(function checkGraphicInfo() {
         if (graphic.current && graphic.current.length != 0 && infos) {
             (async () => {
-                let image: any = await getImage(infos, graphic.current, palets)
+                let _palet = palets
+                if(tempPalet.length>0){
+                    _palet = tempPalet
+                }
+                console.log(_palet)
+                let image: any = await getImage(infos, graphic.current, _palet)
                 //console.log(image);
                 if (image && image.width > 0) {
                     SetImage(image)
                 }
             })();
         }
-    }, [infos, palets]);
+    }, [infos, palets,tempPalet]);
 
     //生成图片
     useEffect(() => {
@@ -354,15 +376,19 @@ export function InfoList(props: Props) {
             <div className={classes.Container} ref={container}>
                 <canvas ref={canvas}  ></canvas>
             </div>
+            <div className={classes.rightSide}>
+                <PaletEditor />
+            </div>
         </div>
     );
 }
 
-const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer }) => {
+const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer ,tempPalet:Buffer}) => {
     return {
         folder: state.folder,
         currentPalet: state.currentPalet,
-        palets: state.palets
+        palets: state.palets,
+        tempPalet:state.tempPalet
     }
 }
 

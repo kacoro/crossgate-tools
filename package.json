@@ -12,13 +12,15 @@
     "start": "cross-env NODE_ENV=development webpack-dev-server --config webpack.config.js",
     "build-render": "cross-env NODE_ENV=production webpack --config webpack.config.js",
     "build-electron": "cross-env NODE_ENV=production electron-builder build -w",
-    "build": "npm run build-render && npm run build-electron"
+    "build": "npm run build-render && npm run build-electron",
+    "rebuild": "rm -rf node_modules/electron && cnpm install --verbose electron"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@kacoro/utils": "^0.0.3",
     "@types/react": "^17.0.0",
+    "@types/react-color": "^3.0.5",
     "@types/react-dom": "^17.0.0",
     "@types/react-redux": "^7.1.11",
     "@types/redux": "^3.6.0",
@@ -48,6 +50,7 @@
     "@types/material-ui": "^0.21.8",
     "jimp": "^0.16.1",
     "react": "^16.13.1",
+    "react-color": "^2.19.3",
     "react-dom": "^16.13.1",
     "redux-thunk": "^2.3.0"
   },
