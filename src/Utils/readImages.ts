@@ -98,7 +98,7 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
         let data = graphic.toJSON().data
         let elementSize = infoJson.width*infoJson.height
-        console.log(data.length,infoJson.length - headLength,elementSize)
+        // console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
         // var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - headLength)
         var imageData = deCoder(graphic.toJSON().data, infoJson.length - headLength)
@@ -127,6 +127,7 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
 
 //获取解析图片信息
 function getInfo(i = 0, palet: Buffer) {
+    console.log("getInfo")
     let json = {    //Buffer.slice末尾不包含
         id: transBuffer(palet.subarray(0, 4)),   //图片的编号 0开始
         ddr: transBuffer(palet.subarray(4, 8), "drr"), //指明图片在数据文件中的起始位置 0 开始
@@ -198,7 +199,7 @@ const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, 
     // })
     
     _imgData.map((pixel: number) => {
-        if(pixel == 0x100){
+        if(pixel == 0x00){
             imgData.push([0, 0, 0, 0])
         }else{
             let [r, g, b] = palet[pixel]
@@ -206,6 +207,7 @@ const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, 
             imgData.push([r,g,b,a])
         }
     })
+    console.log("finish")
 
     return new Promise(async (resolve, reject) => {
         new Jimp(width, height, function (err: any, image: any) {

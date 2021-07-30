@@ -181,7 +181,7 @@ export function transBuffer(palet: any, encode:string = 'DEC') {//先把数组�
             str += ""+item.toString(16)
         }
         if(encode=="drr"){
-            console.log("item:",item,item.toString(16))
+            // console.log("item:",item,item.toString(16))
         }
     })
     str =  str.replace(/(^0*)/g, "");

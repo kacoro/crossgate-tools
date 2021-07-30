@@ -153,6 +153,7 @@ export function InfoList(props: Props) {
         version: '',
         imageId: 0,
     });
+    const [loading, setLoading] = useState(true)
     const [dbValue, saveToDb] = useState(0);
     const myPalet = useMemo(() => {
         if(tempPalet.length>0){
@@ -162,6 +163,7 @@ export function InfoList(props: Props) {
     }, [palets,tempPalet])
     const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => saveToDb(nextValue), 50), [],); // will be created only once initially
 
+   
     const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
         setChecked(event.target.checked);
     };
@@ -185,14 +187,11 @@ export function InfoList(props: Props) {
             //释放内存
             // SetGraphicInfo(Buffer.allocUnsafe(0))
             // SetGraphic(Buffer.allocUnsafe(0))
-            
+
             setState({
                 ...state,
                 [name]: event.target.value as string,
-                imageId:0,
-
             });
-            debouncedSaveByCallBack(0);
         }
     };
 
@@ -216,6 +215,13 @@ export function InfoList(props: Props) {
                     ...acount,
                     'value': data.length,
                 })
+                if(dbValue>data.length){//如果大，则需要重置
+                    setState({
+                        ...state,imageId:0
+                    })
+                    saveToDb(0);
+                }
+               
                 graphicInfo.current = data.graphicInfo
                 graphic.current = data.graphic
 
@@ -244,7 +250,7 @@ export function InfoList(props: Props) {
                 if(tempPalet.length>0){
                     _palet = tempPalet
                 }
-                // console.log(_palet)
+                console.log(_palet)
                 let image: any = await getImage(infos, graphic.current, _palet)
                 //console.log(image);
                 if (image && image.width > 0) {

@@ -78,7 +78,6 @@ export const PaletEditor = (props: Props) => {
         let cell = 17;
         let row = 15;
         let size = 16;
-        console.log("还原",palets)
         const ctx = canvas.current.getContext("2d");
         canvas.current.width = cell * size
         canvas.current.height = row * size

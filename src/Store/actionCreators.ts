@@ -25,7 +25,6 @@ export const setTempPalet = (palet:any[]=[]) => {
 export const ReadPaletsAsyncRequest =  (folder: any) => {
   return (dispatch:any) => {
      let allPalet =  readAllPalet(folder)
-     console.log(allPalet)
      dispatch(selectFolder(folder,allPalet))
   }
 }
