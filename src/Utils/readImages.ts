@@ -5,7 +5,7 @@ import Jimp from 'jimp'
 const jimp: Jimp = require('jimp')
 import { g_ImgMap, transBuffer, decodeImgData, arrTrans } from "./config";
 import { PaletsType } from '../Store/reduce';
-
+import {deCoder} from './cgCoder2'
 //获取图片集信息，图片集数据
 export const readGraphicInfo = async (binPath: string, version: any) => {
     let graphicInfo = readFileSync(path.join(binPath, "bin", g_ImgMap[version].info))
@@ -96,12 +96,22 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
     }
     // var image = null;
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
-        
-        var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - headLength)
+        let data = graphic.toJSON().data
+        let elementSize = infoJson.width*infoJson.height
+        console.log(data.length,infoJson.length - headLength,elementSize)
+        // var imageData = deCoder(data, 1,infoJson.length - headLength)
+        // var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - headLength)
+        var imageData = deCoder(graphic.toJSON().data, infoJson.length - headLength)
+       
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
-        let image = await filleImgPixel(infoJson, imageData, palet,localPaletInfo)
-        // console.log(image)
-        return image
+        try {
+            let image = await filleImgPixel(infoJson, imageData, palet,localPaletInfo)
+            // console.log(image)
+            return image    
+        } catch (error) {
+            return null
+        }
+       
     } else {
         let imgData = { 
             idx: graphic.length,
@@ -139,7 +149,7 @@ interface paletType {
     [key: string]: any
 }
 
-const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet: PaletsType[],localPaletInfo:any) => {
+const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, palet: PaletsType[],localPaletInfo:any) => {
     
     const { width, height } = prop;
     var { _imgData, idx } = data;
@@ -165,26 +175,36 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
    }
     var imgData: any[] = [];
 
-    _imgData.map((item: any) => {
-        if (palet[item]) {
-            var pix = (palet[item] ).map((p:number|string) => {
-                p = p.toString(16)
-                if (Number(p) < 10) {
-                    p = '0' + p
-                } else {
-                    p = p
-                }
-                if (Number('0x' + p) > 0) {
-                    return p;
-                }
-            }).join('');
+    // _imgData.map((item: any) => {
+    //     if (palet[item]) {
+    //         var pix = (palet[item] ).map((p:number|string) => {
+    //             p = p.toString(16)
+    //             if (Number(p) < 10) {
+    //                 p = '0' + p
+    //             } else {
+    //                 p = p
+    //             }
+    //             if (Number('0x' + p) > 0) {
+    //                 return p;
+    //             }
+    //         }).join('');
            
-             imgData.push(pix != '' ? '#' + pix : '#0x000000');
-        }
-        else { //有些图片位置读取不到调色板，这里跳过
-             imgData.push('#0x000000');
-        }
+    //          imgData.push(pix != '' ? '#' + pix : '#0x000000');
+    //     }
+    //     else { //有些图片位置读取不到调色板，这里跳过
+    //          imgData.push('#0x000000');
+    //     }
 
+    // })
+    
+    _imgData.map((pixel: number) => {
+        if(pixel == 0x100){
+            imgData.push([0, 0, 0, 0])
+        }else{
+            let [r, g, b] = palet[pixel]
+            let a = 255
+            imgData.push([r,g,b,a])
+        }
     })
 
     return new Promise(async (resolve, reject) => {
@@ -195,7 +215,8 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
 
             arrTrans(width, imgData).forEach((row: any[], y: number) => {
                 row.forEach((color: any, x: any) => {
-                    image.setPixelColor(Jimp.cssColorToHex(color), x, height - y - 1);
+                    // image.setPixelColor(Jimp.cssColorToHex(color), x, height - y - 1);
+                    image.setPixelColor(Jimp.rgbaToInt(color[0],color[1],color[2],255), x, height - y - 1);
                 });
             });
 
@@ -203,4 +224,5 @@ const filleImgPixel = (prop: infoType, data: { idx: any; _imgData: any; }, palet
         });
     })
 }
+
 

@@ -241,7 +241,7 @@ export function InfoList(props: Props) {
                 if(tempPalet.length>0){
                     _palet = tempPalet
                 }
-                console.log(_palet)
+                // console.log(_palet)
                 let image: any = await getImage(infos, graphic.current, _palet)
                 //console.log(image);
                 if (image && image.width > 0) {
