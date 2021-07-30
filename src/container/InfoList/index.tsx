@@ -153,7 +153,8 @@ export function InfoList(props: Props) {
         version: '',
         imageId: 0,
     });
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
+    const [loadingImg, setLoadingImg] = useState(false)
     const [dbValue, saveToDb] = useState(0);
     const myPalet = useMemo(() => {
         if(tempPalet.length>0){
@@ -200,15 +201,16 @@ export function InfoList(props: Props) {
     //切换版本 获取二进制图片信息和图片数据
     useEffect(function checkVersion() {
 
-        if (folder != '' && currentPalet != "" && state.version != "") {
+        if (folder != '' && currentPalet != "" && state.version != ""&&!loading) {
             //查找图片信息
             //  let data = readGraphicInfo(folder, state.version);
             //  console.log(data);
-
+            setLoading(true);
             (async () => {
                 console.log("test")
                 graphicInfo.current = null;
                 graphic.current = null;
+                
                 // let data = await readGraphicInfoByStream(folder, state.version)
                 let data = await readGraphicInfo(folder, state.version);
                 SetAccount({
@@ -224,6 +226,7 @@ export function InfoList(props: Props) {
                
                 graphicInfo.current = data.graphicInfo
                 graphic.current = data.graphic
+                setLoading(false)
 
             })();
 
@@ -235,7 +238,7 @@ export function InfoList(props: Props) {
     //获取图片信息
     useEffect(function checkGraphicID() {
         if (graphicInfo.current && graphicInfo.current.length != 0) {
-
+            console.log("info")
             let info: infoType = getImageInfo(dbValue, graphicInfo.current);
              SetInfos(info)
            
@@ -245,23 +248,27 @@ export function InfoList(props: Props) {
     // 获取图片数据
     useEffect(function checkGraphicInfo() {
         if (graphic.current && graphic.current.length != 0 && infos) {
+            
             (async () => {
                 let _palet = palets
                 if(tempPalet.length>0){
                     _palet = tempPalet
                 }
-                console.log(_palet)
+                
                 let image: any = await getImage(infos, graphic.current, _palet)
+                console.log("getImage",image)
                 //console.log(image);
                 if (image && image.width > 0) {
                     SetImage(image)
                 }
+               
             })();
         }
     }, [infos, palets,tempPalet]);
 
     //生成图片
     useEffect(() => {
+        console.log(image.width)
         if (image.width > 0) {
             const context = canvas.current.getContext("2d");
             const width = container.current.clientWidth
@@ -275,6 +282,7 @@ export function InfoList(props: Props) {
                 image.width,
                 image.height
             );
+            console.log("image")
             context.putImageData(imageData, (width - image.width) / 2, (height - image.height) / 2);
 
             const test = () => {

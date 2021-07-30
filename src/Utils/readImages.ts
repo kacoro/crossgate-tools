@@ -89,7 +89,7 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
          graphics.copy(paletHead,0,infoJson.ddr + 16, infoJson.ddr + 20);
          let paletLength = transBuffer(paletHead)
          localPaletInfo.length =  paletLength
-         console.log(paletHead,paletLength) //0300=>768
+        //  console.log(paletHead,paletLength) //0300=>768
          graphic = Buffer.allocUnsafe(infoJson.length-20);
          graphics.copy(graphic,0,infoJson.ddr + 20, infoJson.ddr + infoJson.length)
 
@@ -98,25 +98,23 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
         let data = graphic.toJSON().data
         let elementSize = infoJson.width*infoJson.height
-        // console.log(data.length,infoJson.length - headLength,elementSize)
+        console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
-        // var imageData = decodeImgData(graphic.toJSON().data, infoJson.length - headLength)
-        var imageData = deCoder(graphic.toJSON().data, infoJson.length - headLength)
+        var imageData = decodeImgData(graphic.toJSON().data)
+        // var imageData = deCoder(graphic.toJSON().data, infoJson.length - headLength)
        
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
             let image = await filleImgPixel(infoJson, imageData, palet,localPaletInfo)
-            // console.log(image)
+             
             return image    
         } catch (error) {
+            console.log(error)
             return null
         }
        
     } else {
-        let imgData = { 
-            idx: graphic.length,
-            _imgData:graphic.toJSON().data 
-         }
+        let imgData = graphic.toJSON().data  
         let image = await filleImgPixel(infoJson, imgData, palet,localPaletInfo)
         return image
     }
@@ -127,7 +125,6 @@ export async function getImage(infoJson: infoType, graphics: Buffer, palet:any) 
 
 //获取解析图片信息
 function getInfo(i = 0, palet: Buffer) {
-    console.log("getInfo")
     let json = {    //Buffer.slice末尾不包含
         id: transBuffer(palet.subarray(0, 4)),   //图片的编号 0开始
         ddr: transBuffer(palet.subarray(4, 8), "drr"), //指明图片在数据文件中的起始位置 0 开始
@@ -150,11 +147,11 @@ interface paletType {
     [key: string]: any
 }
 
-const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, palet: PaletsType[],localPaletInfo:any) => {
+const filleImgPixel = (prop: infoType, data:any[], palet: PaletsType[],localPaletInfo:any) => {
     
     const { width, height } = prop;
-    var { _imgData, idx } = data;
-    if(localPaletInfo.version>=2){
+    
+    if(localPaletInfo.version>=2){//主要是处理3.0的 自带调色板
         console.log(localPaletInfo)
         //处理palet
         let _palet: any
@@ -162,8 +159,8 @@ const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, 
         try {
             // _imgData.copy(_palet,0,_imgData.length-localPaletInfo.length,_imgData.length)
             //    _palet =  _palet.toJSON().data
-            _palet = _imgData.slice(_imgData.length-localPaletInfo.length)
-            _imgData = _imgData.slice(0,_imgData.length-localPaletInfo.length)
+            _palet = data.slice(data.length-localPaletInfo.length)
+            data = data.slice(0,data.length-localPaletInfo.length)
            
            _palet = arrTrans(3, _palet)
            _palet = _palet.map((item: any[])=>{
@@ -175,36 +172,20 @@ const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, 
         }
    }
     var imgData: any[] = [];
-
-    // _imgData.map((item: any) => {
-    //     if (palet[item]) {
-    //         var pix = (palet[item] ).map((p:number|string) => {
-    //             p = p.toString(16)
-    //             if (Number(p) < 10) {
-    //                 p = '0' + p
-    //             } else {
-    //                 p = p
-    //             }
-    //             if (Number('0x' + p) > 0) {
-    //                 return p;
-    //             }
-    //         }).join('');
-           
-    //          imgData.push(pix != '' ? '#' + pix : '#0x000000');
-    //     }
-    //     else { //有些图片位置读取不到调色板，这里跳过
-    //          imgData.push('#0x000000');
-    //     }
-
-    // })
     
-    _imgData.map((pixel: number) => {
+    data.map((pixel: number) => {
         if(pixel == 0x00){
             imgData.push([0, 0, 0, 0])
         }else{
-            let [r, g, b] = palet[pixel]
-            let a = 255
-            imgData.push([r,g,b,a])
+            try {
+                let [r, g, b] = palet[pixel]
+                let a = 255
+                imgData.push([r,g,b,a])    
+            } catch (error) {
+                //调色板上没有这个颜色时
+                imgData.push([0, 0, 0, 0])
+            }
+            
         }
     })
     console.log("finish")
@@ -218,7 +199,7 @@ const filleImgPixel = (prop: infoType, data: { idx: number; _imgData: any[]; }, 
             arrTrans(width, imgData).forEach((row: any[], y: number) => {
                 row.forEach((color: any, x: any) => {
                     // image.setPixelColor(Jimp.cssColorToHex(color), x, height - y - 1);
-                    image.setPixelColor(Jimp.rgbaToInt(color[0],color[1],color[2],255), x, height - y - 1);
+                    image.setPixelColor(Jimp.rgbaToInt(color[0],color[1],color[2],color[3]), x, height - y - 1);
                 });
             });
 
