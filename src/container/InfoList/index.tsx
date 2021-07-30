@@ -185,11 +185,14 @@ export function InfoList(props: Props) {
             //释放内存
             // SetGraphicInfo(Buffer.allocUnsafe(0))
             // SetGraphic(Buffer.allocUnsafe(0))
-
+            
             setState({
                 ...state,
                 [name]: event.target.value as string,
+                imageId:0,
+
             });
+            debouncedSaveByCallBack(0);
         }
     };
 
