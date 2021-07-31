@@ -226,12 +226,13 @@ export const myInfoList: infoType = {
  * @return {*}  {any[]}
  */
 const decodeImgData = (raw: any[]): any[] => {
-
+    console.log(raw)
     var decodeData: any[] = []
     let raw_length = raw.length
     let count = 0
     let a = []
     let x = 0;
+
     while (raw.length > 0) {
         let pixel = raw.shift()
         let condistion = pixel & 0xf0

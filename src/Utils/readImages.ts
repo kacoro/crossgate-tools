@@ -5,7 +5,7 @@ import Jimp from 'jimp'
 const jimp: Jimp = require('jimp')
 import { g_ImgMap, transBuffer, decodeImgData, arrTrans ,BG_COLOR} from "./config";
 import { PaletsType } from '../Store/reduce';
-import {deCoder} from './cgCoder2'
+import {decodeByBuferr} from './cgCoder'
 //获取图片集信息，图片集数据
 export const readGraphicInfo = async (binPath: string, version: any) => {
     try {
@@ -149,9 +149,11 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
        
         // console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
+        console.time("decode")
         var imageData = decodeImgData(graphic.toJSON().data)
-        // var imageData = deCoder(graphic.toJSON().data, infoJson.length - headLength)
-       
+        // var imgBuffer = decodeByBuferr(graphic)
+        // let imageData = imgBuffer.toJSON().data
+        console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
             let image = await filleImgPixel(infoJson, imageData, palet,localPaletInfo)

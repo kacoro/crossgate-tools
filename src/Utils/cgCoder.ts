@@ -1,8 +1,165 @@
+import { BG_COLOR } from "./config"
+
 const EOF = -1
 const REP = 0
 const STR = 1
 const INV = 2
-export const deCoder = (data:any[], elementSize: number,count:number = 0 ) => {
+
+
+/**
+ * JSS自定的一种Run-Length算法
+ *
+ * @param {any[]} raw
+ * @return {*}  {any[]}
+ */
+
+
+ const decodeByBuferr = (raw: Buffer): Buffer => {
+    console.log(raw)
+    var decodeData = Buffer.alloc(0)
+    let raw_length = raw.length
+    let count = 0
+    let a = Buffer.alloc(0)
+    let x = 0;
+    let i = 0;
+    while (raw.length -i> 0) {
+        let pixel = raw.slice(i,i+=1)[0]
+        let condistion = pixel & 0xf0
+
+        switch (condistion) {
+            case 0x00:  //0n 长度为n的字符串
+                count = pixel & 0x0f;
+                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                break
+            case 0x10: //1n 长度为n*0x100+m的字符串
+                count = (pixel & 0x0f) * 0x100 + raw.slice(i,i+=1)[0];
+                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                break
+            case 0x20: // 0x2n 第二个字节x，第三个字节y，第四个字节c，代表n*0x10000+x*0x100+y个字符
+                count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
+                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                break
+            case 0x80://填充n个X
+                count = pixel & 0x0F;
+                a = Buffer.alloc(count,raw.slice(i,i+=1)[0])
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            case 0x90: //填充n*0x100+m个X
+                x = raw.slice(i,i+=1)[0]
+                count = (pixel & 0x0F) * 0x100 + raw.slice(i,i+=1)[0];
+                // a = new Array(count).fill(x)
+                a = Buffer.alloc(count,x)
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            case 0xa0: //填充x*0x10000+y*0x100+z个X
+                x = raw.slice(i,i+=1)[0]
+                count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
+                a = Buffer.alloc(count,x)
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            case 0xc0: // 填充n个背景色
+                count = pixel & 0x0F;
+                a = Buffer.alloc(count,BG_COLOR)
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            case 0xd0:  // 填充n*0x100+m个背景色
+                count = (pixel & 0x0F) * 0x100 + raw.slice(i,i+=1)[0];
+                a = Buffer.alloc(count,BG_COLOR)
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            case 0xe0:  // 填充x*0x10000+y*0x100+z个背景色
+                count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
+                a = Buffer.alloc(count,BG_COLOR)
+                decodeData = Buffer.concat([decodeData,a])
+                break
+            default:
+                console.log(`extration is stopped. Bytes remines ${decodeData.length}, total ${raw_length})`)
+                console.log(`${decodeData.length} bytes has been extracted.`)
+                break
+        }
+    }
+    //console.log(idx,iPos)
+    return decodeData;
+}
+
+
+/**
+ * JSS自定的一种Run-Length算法
+ *
+ * @param {any[]} raw
+ * @return {*}  {any[]}
+ */
+const decodeImgData = (raw: any[]): any[] => {
+    console.log(raw)
+    var decodeData: any[] = []
+    let raw_length = raw.length
+    let count = 0
+    let a = []
+    let x = 0;
+
+    while (raw.length > 0) {
+        let pixel = raw.shift()
+        let condistion = pixel & 0xf0
+
+        switch (condistion) {
+            case 0x00:  //0n 长度为n的字符串
+                count = pixel & 0x0f;
+                decodeData = decodeData.concat(raw.splice(0, count))
+                break
+            case 0x10: //1n 长度为n*0x100+m的字符串
+                count = (pixel & 0x0f) * 0x100 + raw.shift();
+                decodeData = decodeData.concat(raw.splice(0, count))
+                break
+            case 0x20: // 0x2n 第二个字节x，第三个字节y，第四个字节c，代表n*0x10000+x*0x100+y个字符
+                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
+                decodeData = decodeData.concat(raw.splice(0, count))
+                break
+            case 0x80://填充n个X
+                count = pixel & 0x0F;
+                a = new Array(count).fill(raw.shift())
+                decodeData = decodeData.concat(a)
+                break
+            case 0x90: //填充n*0x100+m个X
+                x = raw.shift()
+                count = (pixel & 0x0F) * 0x100 + raw.shift();
+                a = new Array(count).fill(x)
+                decodeData = decodeData.concat(a)
+                break
+            case 0xa0: //填充x*0x10000+y*0x100+z个X
+                x = raw.shift()
+                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
+                a = new Array(count).fill(x)
+                decodeData = decodeData.concat(a)
+                break
+            case 0xc0: // 填充n个背景色
+                count = pixel & 0x0F;
+                a = new Array(count).fill(BG_COLOR)
+                decodeData = decodeData.concat(a)
+                break
+            case 0xd0:  // 填充n*0x100+m个背景色
+                count = (pixel & 0x0F) * 0x100 + raw.shift();
+                a = new Array(count).fill(BG_COLOR)
+                decodeData = decodeData.concat(a)
+                break
+            case 0xe0:  // 填充x*0x10000+y*0x100+z个背景色
+                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
+                a = new Array(count).fill(BG_COLOR)
+                decodeData = decodeData.concat(a)
+                break
+            default:
+                console.log(`extration is stopped. Bytes remines ${decodeData.length}, total ${raw_length})`)
+                console.log(`${decodeData.length} bytes has been extracted.`)
+                break
+        }
+    }
+    //console.log(idx,iPos)
+    return decodeData;
+}
+
+export {decodeImgData,decodeByBuferr}
+
+
+export const deCodertest = (data:any[], elementSize: number,count:number = 0 ) => {
 
     console.log("data:",data)
     let pattern
