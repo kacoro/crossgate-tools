@@ -1,10 +1,11 @@
 import * as actionTypes from "./actionTypes"
 import {readGraphicInfo} from "../Utils/readImages";
 import {readPalet,readAllPalet, paletType} from "../Utils/readPalets";
-export const selectFolder = (folder: any,allPalet:paletType[]) => {
+import { readAllVersion, versionType } from "../Utils/version";
+export const selectFolder = (folder: any,allPalet:paletType[],allVersion: versionType[]) => {
     return {
       type: actionTypes.SELECT_FOLDER,
-      folder,allPalet
+      folder,allPalet,allVersion
     }
   }
 
@@ -25,7 +26,9 @@ export const setTempPalet = (palet:any[]=[]) => {
 export const ReadPaletsAsyncRequest =  (folder: any) => {
   return (dispatch:any) => {
      let allPalet =  readAllPalet(folder)
-     dispatch(selectFolder(folder,allPalet))
+     let allVersion =  readAllVersion(folder)
+     console.log(allVersion)
+     dispatch(selectFolder(folder,allPalet,allVersion))
   }
 }
 

@@ -1,6 +1,7 @@
-import { paletType } from "src/Utils/readPalets"
+import { paletType } from "../Utils/readPalets"
 import * as actionTypes from "./actionTypes"
 
+import {versionType} from "../Utils/version"
 
 // export type PaletsType = Buffer[Buffer[number]] | Buffer[]
 
@@ -12,19 +13,28 @@ interface ImageList {
   [index: number]: number
 }
 
-const initialState = {
-  articles: [
-    { id: 1, title: "post 1", body: "Quisque cursus, metus vitae pharetra" },
-    { id: 2, title: "post 2", body: "Quisque cursus, metus vitae pharetra" },
-  ],
-  palets: [] as PaletsType,
+interface initState{
+  palets:PaletsType[],
+  currentPalet:string,
+  folder:string,
+  currentVersion:string,
+  imageList:ImageList[],
+  currentImage:number,
+  allPalet:paletType[],
+  tempPalet:PaletsType,
+  allVersion:versionType[],
+}
+
+const initialState:initState = {
+  palets: [] ,
   currentPalet: '', //索引
   folder: "",
   currentVersion: '',
-  imageList: [] as ImageList,
+  imageList: [],
   currentImage: 0,
-  allPalet: [] as paletType[],
-  tempPalet: [] as PaletsType //临时存储
+  allPalet: [] ,
+  tempPalet: [] , //临时存储
+  allVersion:[]
 }
 
 const reducer = (state = initialState, action: any) => {
@@ -33,7 +43,8 @@ const reducer = (state = initialState, action: any) => {
       return {
         ...state,
         folder: action.folder,
-        allPalet: action.allPalet
+        allPalet: action.allPalet,
+        allVersion:action.allVersion
       }
 
     case actionTypes.SELECT_PALET:

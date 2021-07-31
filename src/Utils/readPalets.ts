@@ -54,11 +54,11 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
     let allPalet:paletType[] = [];
     let suffix = ".cgp";
     let paletsPath = path.join(binPath, "bin", "pal")
-    let files = fs.readdirSync(paletsPath)// 读取目录
+    try {
+        let files = fs.readdirSync(paletsPath)// 读取目录
         files.forEach((filename, index) => { // item: 目录和文件名称
             if(filename.includes(suffix)){
                 let data: any
-                
                 data = fs.readFileSync(path.join(paletsPath,filename))
                 // console.log(data)
                 data = data.slice(0, data.length - 13 * 3).toJSON().data
@@ -74,9 +74,12 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
             }
              
         })
-
+    } catch (error) {
+        alert(error.message+"，请重新选择目录！") 
+    }
     return allPalet;
 }
+
 
 export const SavePalet = (palet: PaletsType[]  ) =>{
     palet = palet.map((item)=>{

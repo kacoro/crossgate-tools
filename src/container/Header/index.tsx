@@ -15,14 +15,13 @@ import Button from '@material-ui/core/Button';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import Grid from '@material-ui/core/Grid'
 import TextField from '@material-ui/core/TextField'
-
+import ReplayIcon from '@material-ui/icons/Replay';
 import { connect } from 'react-redux';
 
-const fs = require('fs')
+
 const { dialog } = require('electron').remote;
 import {clampNumber, g_palet} from '../../Utils/config';
-const path = require('path')
-import * as actionTypes from "../../Store/actionTypes"
+
 import {paletType} from "../../Utils/readPalets";
 import { selectFolder,simulateAsyncRequest,ReadPaletsAsyncRequest,selectPalet } from "../../Store/actionCreators"
 const useStyles = makeStyles((theme) => ({
@@ -110,6 +109,9 @@ export  function ProminentAppBar(props:Props) {
         "folder": folder[0]
       });
   }
+  const handleReplay = () =>{
+     location.reload()
+  }
 
 
   return (
@@ -157,16 +159,19 @@ export  function ProminentAppBar(props:Props) {
                 {allPalet.map((item,index)=>
                   <option key={index} value={index}>{item.name}</option>
                 )}
-               
                 </Select>
               
             </FormControl>
-          <IconButton aria-label="search" color="inherit">
+            <IconButton aria-label="Replay" color="inherit" onClick={handleReplay}>
+             <ReplayIcon  />
+           </IconButton>
+            
+          {/* <IconButton aria-label="search" color="inherit">
             <SearchIcon />
           </IconButton>
           <IconButton aria-label="display more actions" edge="end" color="inherit">
             <MoreIcon />
-          </IconButton>
+          </IconButton> */}
         </Toolbar>
       </AppBar>
     </div>
@@ -178,7 +183,7 @@ const mapStateToProps = (state: {  allPalet: any; articles: any; }) => {
       // folder:state.folder,
       // allPalet:state.allPalet,
       articles: state.articles,
-      allPalet:state.allPalet
+      allPalet:state.allPalet,
     }
   }
   const mapDispatchToProps = (dispatch:any) => {

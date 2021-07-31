@@ -1,3 +1,4 @@
+
 var _strPath;	// 程序路径
 var _uMapCgp = []; // 调色板
 var _vecImginfo = null; // 图片索引
@@ -5,7 +6,7 @@ var _imgEncode = 1024 * 1024 + 256 * 3; // 记录加密后的图片信息
 var _imgData = 1024 * 1024 + 256 * 3; // 记录解密后的图片数据，有的带有调色板，调色板记录在最后
 var _imgDataIdx = 0;	// 解密之后的idx
 var _cgpLen = 0;		// 图片中调色板长度
-
+export const BG_COLOR = 0x00 //默认的颜色填充，最好超过调色板的255，不然会把一些黑色背景删除了
 var _imgPixel = 1024 * 1024; // 记录图片数据 最大支持4M的图片 如果有图片过大，修改这里
 
 var _tiledFilesJson; // 存储图片的所有信息
@@ -80,6 +81,8 @@ export const g_c240_255 = [
     0xff, 0xff, 0xff,
 ];
 
+
+
 // 图片索引与图片库的对照表
 // 已经包含所有图片库
 // Anime开头的相当于是指定以下库的动作，相当于是配置文件，这个就不解析了，必要性不大
@@ -88,6 +91,7 @@ export const g_ImgMap = [
     { name: "龙之沙时计", info: "GraphicInfoEx_4.bin", file: "GraphicEx_4.bin" },		// 龙之沙时计
     { name: "乐园之卵", info: "GraphicInfo_Joy_22.bin", file: "Graphic_Joy_22.bin" },	// 乐园之卵
     { name: "乐园之卵（精灵)", info: "GraphicInfoV3_18.bin", file: "GraphicV3_18.bin" },	// 乐园之卵（精灵
+    
     // {name:"", info:".bin", file: ".bin" },
 
     //{ "GraphicInfoV3_18.bin", "GraphicV3_18.bin" }, // 乐园之卵（精灵
@@ -215,14 +219,14 @@ export const myInfoList: infoType = {
 };
 
 
-export /**
- * 
+/**
+ * JSS自定的一种Run-Length算法
  *
  * @param {any[]} raw
- * @param {number} len
- * @return {*}  {{idx:number,_imgData:any[]}}
+ * @return {*}  {any[]}
  */
-const decodeImgData = (raw: any[]):any[]=> {
+const decodeImgData = (raw: any[]): any[] => {
+
     var decodeData: any[] = []
     let raw_length = raw.length
     let count = 0
@@ -245,36 +249,36 @@ const decodeImgData = (raw: any[]):any[]=> {
                 count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
                 decodeData = decodeData.concat(raw.splice(0, count))
                 break
-            case 0x80:
+            case 0x80://填充n个X
                 count = pixel & 0x0F;
                 a = new Array(count).fill(raw.shift())
                 decodeData = decodeData.concat(a)
                 break
-            case 0x90:
-                 x = raw.shift()
+            case 0x90: //填充n*0x100+m个X
+                x = raw.shift()
                 count = (pixel & 0x0F) * 0x100 + raw.shift();
                 a = new Array(count).fill(x)
                 decodeData = decodeData.concat(a)
                 break
-            case 0xa0:
+            case 0xa0: //填充x*0x10000+y*0x100+z个X
                 x = raw.shift()
                 count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
                 a = new Array(count).fill(x)
                 decodeData = decodeData.concat(a)
                 break
-            case 0xc0: // 透明色，默认值为0，可变更后面处理使用
+            case 0xc0: // 填充n个背景色
                 count = pixel & 0x0F;
-                a = new Array(count).fill(0x00)
+                a = new Array(count).fill(BG_COLOR)
                 decodeData = decodeData.concat(a)
                 break
-            case 0xd0:  // 透明色
+            case 0xd0:  // 填充n*0x100+m个背景色
                 count = (pixel & 0x0F) * 0x100 + raw.shift();
-                a = new Array(count).fill(0x00)
+                a = new Array(count).fill(BG_COLOR)
                 decodeData = decodeData.concat(a)
                 break
-            case 0xe0:  // 透明色
+            case 0xe0:  // 填充x*0x10000+y*0x100+z个背景色
                 count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
-                a = new Array(count).fill(0x00)
+                a = new Array(count).fill(BG_COLOR)
                 decodeData = decodeData.concat(a)
                 break
             default:
@@ -286,3 +290,5 @@ const decodeImgData = (raw: any[]):any[]=> {
     //console.log(idx,iPos)
     return decodeData;
 }
+
+export {decodeImgData}

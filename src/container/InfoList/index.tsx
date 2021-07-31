@@ -19,6 +19,7 @@ import { throttle, debounce } from '@kacoro/utils'
 import { exportCanvasAsPNG, MIME_TYPE } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
 import PaletEditor from '../PaletEditor'
+import { versionType } from 'src/Utils/version';
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
@@ -123,7 +124,8 @@ type Props = {
     folder?: string;
     currentPalet?: string | number,
     palets: Buffer,
-    tempPalet:Buffer
+    tempPalet:Buffer,
+    allVersion:versionType[]
 };
 type evenType = {
     name?: string;
@@ -135,7 +137,7 @@ export interface Bitmap {
     height: number;
 }
 export function InfoList(props: Props) {
-    const { folder, palets, currentPalet ,tempPalet} = props
+    const { folder, palets, currentPalet ,tempPalet,allVersion} = props
     const classes = useStyles();
     const [versions] = useState(g_ImgMap);
     const [acount, SetAccount] = useState({ key: 'acount', name: '图片总数', value: 0 })
@@ -147,7 +149,7 @@ export function InfoList(props: Props) {
     // const [graphic, SetGraphic] = useState(Buffer.allocUnsafe(0));
     const [checked, setChecked] = React.useState(true);
     const graphicInfo = useRef(Buffer.allocUnsafe(0))
-    const graphic = useRef(Buffer.allocUnsafe(0))
+    const graphic = useRef('')
     const [image, SetImage] = useState({} as Bitmap);
     const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
         version: '',
@@ -212,7 +214,7 @@ export function InfoList(props: Props) {
                 graphic.current = null;
                 
                 // let data = await readGraphicInfoByStream(folder, state.version)
-                let data = await readGraphicInfo(folder, state.version);
+                let data = await readGraphicInfo(folder, allVersion[state.version as number]);
                 SetAccount({
                     ...acount,
                     'value': data.length,
@@ -225,7 +227,7 @@ export function InfoList(props: Props) {
                 }
                
                 graphicInfo.current = data.graphicInfo
-                graphic.current = data.graphic
+                graphic.current = data.graphicPath
                 setLoading(false)
 
             })();
@@ -256,7 +258,7 @@ export function InfoList(props: Props) {
                 }
                 
                 let image: any = await getImage(infos, graphic.current, _palet)
-                console.log("getImage",image)
+                // console.log("getImage",image)
                 //console.log(image);
                 if (image && image.width > 0) {
                     SetImage(image)
@@ -321,7 +323,7 @@ export function InfoList(props: Props) {
                         }}
                     >
                         <option aria-label="None" value="" />
-                        {versions.map((item, index) => {
+                        {allVersion.map((item, index) => {
                             return <option key={index} value={index}>{item.name}</option>
                         })}
 
@@ -400,12 +402,13 @@ export function InfoList(props: Props) {
     );
 }
 
-const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer ,tempPalet:Buffer}) => {
+const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer ,tempPalet:Buffer,allVersion:versionType[]}) => {
     return {
         folder: state.folder,
         currentPalet: state.currentPalet,
         palets: state.palets,
-        tempPalet:state.tempPalet
+        tempPalet:state.tempPalet,
+        allVersion:state.allVersion
     }
 }
 
