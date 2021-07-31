@@ -146,12 +146,15 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
     // var image = null;
     const {graphic,version,localPaletInfo} = await readGraphiByStream(graphics_path,infoJson)
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
-       
+        let elementSize = infoJson.width*infoJson.height
         // console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
         console.time("decode")
+        if(version==3){
+            elementSize += localPaletInfo.length
+        }
         // var imageData = decodeImgData(graphic.toJSON().data)
-        var imgBuffer = decodeByBuferr(graphic)
+        var imgBuffer = decodeByBuferr(graphic,elementSize)
         let imageData = imgBuffer.toJSON().data
         console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))

@@ -14,71 +14,85 @@ const INV = 2
  */
 
 
- const decodeByBuferr = (raw: Buffer): Buffer => {
+ const decodeByBuferr = (raw: Buffer,elementSize:number): Buffer => {
     console.log(raw)
-    var decodeData = Buffer.alloc(0)
+    var decodeData = Buffer.alloc(elementSize)
     let raw_length = raw.length
-    let count = 0
+    let decodeLength = 0
+    
     let a = Buffer.alloc(0)
     let x = 0;
     let i = 0;
     while (raw.length -i> 0) {
         let pixel = raw.slice(i,i+=1)[0]
         let condistion = pixel & 0xf0
-
+        let count = 0
         switch (condistion) {
             case 0x00:  //0n 长度为n的字符串
                 count = pixel & 0x0f;
-                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                // decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                 raw.copy(decodeData,decodeLength,i,i+=count);
+                // console.log(decodeData,decodeLength)
                 break
             case 0x10: //1n 长度为n*0x100+m的字符串
                 count = (pixel & 0x0f) * 0x100 + raw.slice(i,i+=1)[0];
-                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                // decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                raw.copy(decodeData,decodeLength,i,i+=count);
                 break
             case 0x20: // 0x2n 第二个字节x，第三个字节y，第四个字节c，代表n*0x10000+x*0x100+y个字符
                 count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
-                decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
+                raw.copy(decodeData,decodeLength,i,i+=count);
+                // decodeData = Buffer.concat([decodeData,raw.slice(i,i+=count)])
                 break
             case 0x80://填充n个X
                 count = pixel & 0x0F;
                 a = Buffer.alloc(count,raw.slice(i,i+=1)[0])
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             case 0x90: //填充n*0x100+m个X
                 x = raw.slice(i,i+=1)[0]
                 count = (pixel & 0x0F) * 0x100 + raw.slice(i,i+=1)[0];
                 // a = new Array(count).fill(x)
                 a = Buffer.alloc(count,x)
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             case 0xa0: //填充x*0x10000+y*0x100+z个X
                 x = raw.slice(i,i+=1)[0]
                 count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
                 a = Buffer.alloc(count,x)
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             case 0xc0: // 填充n个背景色
                 count = pixel & 0x0F;
                 a = Buffer.alloc(count,BG_COLOR)
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             case 0xd0:  // 填充n*0x100+m个背景色
                 count = (pixel & 0x0F) * 0x100 + raw.slice(i,i+=1)[0];
                 a = Buffer.alloc(count,BG_COLOR)
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             case 0xe0:  // 填充x*0x10000+y*0x100+z个背景色
                 count = (pixel & 0x0F) * 0x10000 + raw.slice(i,i+=1)[0] * 0x100 + raw.slice(i,i+=1)[0];
                 a = Buffer.alloc(count,BG_COLOR)
-                decodeData = Buffer.concat([decodeData,a])
+                a.copy(decodeData,decodeLength);
+                // decodeData = Buffer.concat([decodeData,a])
                 break
             default:
                 console.log(`extration is stopped. Bytes remines ${decodeData.length}, total ${raw_length})`)
                 console.log(`${decodeData.length} bytes has been extracted.`)
                 break
         }
+        decodeLength += count
     }
     //console.log(idx,iPos)
+    
+    console.log("decodeLength",elementSize,decodeLength)
     return decodeData;
 }
 
