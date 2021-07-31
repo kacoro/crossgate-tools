@@ -94,8 +94,8 @@ export const PaletList = (props: Props) =>{
 
     const genCanvas = () =>{
         
-        let cell =  17;
-        let row = 15;
+        let cell =  16;
+        let row = 16;
         const ctx = canvas.current.getContext("2d");
         canvas.current.width  = cell*32
         canvas.current.height  = row*32

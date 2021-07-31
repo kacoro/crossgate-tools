@@ -75,8 +75,8 @@ export const PaletEditor = (props: Props) => {
     }
 
     const genCanvas = () => {
-        let cell = 17;
-        let row = 15;
+        let cell = 16;
+        let row = 16;
         let size = 16;
         const ctx = canvas.current.getContext("2d");
         canvas.current.width = cell * size
@@ -122,7 +122,7 @@ export const PaletEditor = (props: Props) => {
     const handleSetTempPalet = (color: { r: number; g: number; b: number; }) => { //设置temp
         // let fileName = 'palect'+currentPalet+'.bmp';
         // let mimeType:MIME_TYPE = "image/bmp";
-        let index = pos.y * 17 + pos.x
+        let index = pos.y * 16 + pos.x
         
         myPalet[index] = [color.r, color.g, color.b]
        

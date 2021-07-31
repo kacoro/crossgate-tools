@@ -8,7 +8,7 @@ export const readPalet = (binPath: string, index: number) => {
     try {
         palet = fs.readFileSync(path.join(binPath, "bin", "pal", g_palet[index].value))
         
-        palet = palet.slice(0, palet.length - 13 * 3).toJSON().data
+        palet = palet.slice(0, palet.length - 12 * 3).toJSON().data
         
         palet = [...g_c0_15, ...palet, ...g_c240_255]
         console.log(palet.length)
@@ -31,7 +31,7 @@ export const readPalet = (binPath: string, index: number) => {
         // });
         // palet = [...palet0_15, ...palet, ...palet240_255]
       
-        // console.log(palet)
+         console.log(palet)
     } catch (error) {
         //弹窗
         console.dir(error.message)
@@ -61,7 +61,8 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
                 let data: any
                 data = fs.readFileSync(path.join(paletsPath,filename))
                 // console.log(data)
-                data = data.slice(0, data.length - 13 * 3).toJSON().data
+                // data = data.slice(0, data.length - 12 * 3).toJSON().data
+                data = data.slice(0, data.length - 12 * 3).toJSON().data
                 data = [...g_c0_15, ...data, ...g_c240_255]
                 data = arrTrans(3, data)
                 data = data.map((item:any | any[])=>{
@@ -77,6 +78,7 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
     } catch (error) {
         alert(error.message+"，请重新选择目录！") 
     }
+    console.log(allPalet)
     return allPalet;
 }
 
