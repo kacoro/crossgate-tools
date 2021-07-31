@@ -150,9 +150,9 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
         // console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
         console.time("decode")
-        var imageData = decodeImgData(graphic.toJSON().data)
-        // var imgBuffer = decodeByBuferr(graphic)
-        // let imageData = imgBuffer.toJSON().data
+        // var imageData = decodeImgData(graphic.toJSON().data)
+        var imgBuffer = decodeByBuferr(graphic)
+        let imageData = imgBuffer.toJSON().data
         console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
