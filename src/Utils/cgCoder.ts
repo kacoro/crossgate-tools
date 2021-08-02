@@ -15,7 +15,7 @@ const INV = 2
 
 
  const decodeByBuferr = (raw: Buffer,elementSize:number): Buffer => {
-    console.log(raw)
+    // console.log(raw)
     var decodeData = Buffer.alloc(elementSize)
     let raw_length = raw.length
     let decodeLength = 0
@@ -92,7 +92,7 @@ const INV = 2
     }
     //console.log(idx,iPos)
     
-    console.log("decodeLength",elementSize,decodeLength)
+    // console.log("decodeLength",elementSize,decodeLength)
     return decodeData;
 }
 

@@ -7,81 +7,10 @@ type Props = {
     currentPalet?: string | number,
     palets: Buffer
 };
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        root: {
-            flexGrow: 1,
-            display: "flex",
-            height: '100%',
-            overflow: 'hidden',
-        },
-        leftSide: {
-            padding: '10px',
-            width: "280px",
-            minWidth: "280px",
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            backgroundColor: theme.palette.background.paper,
-            //borderRight:"1px solid #ccc",
-            boxShadow:"0px 5px 2px -1px rgb(0 0 0 / 50%), 0px 10px 1px 0px rgb(0 0 0 / 30%), 0px 10px 6px 0px rgb(0 0 0 / 12%)"
-        },
-        Container: {
-            flex: 1,
-            display:"flex",
-            justifyContent:"center",
-            alignItems:"center"
-        },
-        canvas:{
-            
-        },
-        demo: {
-            backgroundColor: theme.palette.background.paper,
-        },
-        formControl: {
-            width: '100%',
-        },
-        title: {
-            margin: theme.spacing(4, 0, 2),
-        },
-        select: {
-            width: '100%'
-        },
-        itemText: {
-            paddingTop: 0,
-            paddingBottom: 0,
-            marginTop: 0,
-            marginBottom: 0,
-            color: "#fff"
-        },
-        search: {
-            padding: '2px 10px',
-            display: 'flex',
-            alignItems: 'center',
-            width: 280,
-        },
-        input: {
-            marginLeft: theme.spacing(1),
-            flex: 1,
-            textAlign: "center",
+import { usePanelstyles } from '../../Component/usePanelstyles';
 
-        },
-        iconButton: {
-            padding: 10,
-        },
-        grid: {
-            padding: '8px 16px',
-            color: "#fff"
-        },
-        gridLeft: {
-
-        },
-        gridRight: {
-
-        }
-    }),
-);
 export const PaletList = (props: Props) =>{
-    const classes = useStyles();
+    const classes = usePanelstyles();
     const canvas = useRef(null)
     const container = useRef(null)
     const {  palets, currentPalet } = props

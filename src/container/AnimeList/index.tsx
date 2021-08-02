@@ -1,5 +1,4 @@
-import React, { useMemo,useState, useRef, useEffect, useCallback } from 'react';
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import List from '@material-ui/core/List';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
@@ -11,25 +10,27 @@ import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readGraphicInfo, getImageInfo, getImage, readGraphicInfoByStream } from '../../Utils/readImages'
+import { readGraphicInfo, getImageInfo, getImage } from '../../Utils/readImages'
+import { readAnimesInfo, getAnimeInfo, getAnime } from '../../Utils/anime'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList } from '../../Utils/config'
-import MainCanvas from '../MainCanvas'
 import { throttle, debounce } from '@kacoro/utils'
 import { exportCanvasAsPNG, MIME_TYPE } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
 import PaletEditor from '../PaletEditor'
 import { versionType } from 'src/Utils/version';
-
-import {GraphicInfoPanel, infoType} from '../../Component/GraphicInfoPanel';
+import { AnimeInfoPanel, infoType } from '../../Component/AnimeInfoPanel';
 import { usePanelstyles } from '../../Component/usePanelstyles';
+import { allAnimeType } from 'src/Utils/anime';
+
 
 type Props = {
     folder?: string;
     currentPalet?: string | number,
     palets: Buffer,
-    tempPalet:Buffer,
-    allVersion:versionType[]
+    tempPalet: Buffer,
+    allVersion: versionType[],
+    allAnime: allAnimeType[]
 };
 
 export interface Bitmap {
@@ -37,18 +38,22 @@ export interface Bitmap {
     width: number;
     height: number;
 }
-export function InfoList(props: Props) {
-    const { folder, palets, currentPalet ,tempPalet,allVersion} = props
+export function AnimeList(props: Props) {
+    const { folder, palets, currentPalet, tempPalet, allVersion, allAnime } = props
     const classes = usePanelstyles();
-    const [acount, SetAccount] = useState({ key: 'acount', name: '图片总数', value: 0 })
+    const [acount, SetAccount] = useState({ key: 'acount', name: '动画总数', value: 0 })
     const [infos, SetInfos] = useState(null);
+    const [extendInfo, SetExtendInfo] = useState(null);
     const canvas = useRef(null)
     const container = useRef(null)
 
     const [checked, setChecked] = React.useState(true);
-    const graphicInfo = useRef(Buffer.allocUnsafe(0))
-    const graphic = useRef('')
-    const [image, SetImage] = useState({} as Bitmap);
+    const animesInfo = useRef(Buffer.allocUnsafe(0))
+    const graphicsInfo = useRef(Buffer.allocUnsafe(0))
+    const animePath = useRef('')
+    const graphicPath = useRef('')
+    const rAF  = useRef(null)
+    // const [image, SetImage] = useState({} as Bitmap);
     const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
         version: '',
         imageId: 0,
@@ -56,22 +61,23 @@ export function InfoList(props: Props) {
     const [loading, setLoading] = useState(false)
     const [loadingImg, setLoadingImg] = useState(false)
     const [dbValue, saveToDb] = useState(0);
+
     const myPalet = useMemo(() => {
-        if(tempPalet.length>0){
+        if (tempPalet.length > 0) {
             return tempPalet
-        } 
+        }
         return palets
-    }, [palets,tempPalet])
+    }, [palets, tempPalet])
     const debouncedSaveByCallBack: Function = useCallback(throttle((nextValue: number) => {
         setState({
             ...state,
             imageId: nextValue,
         });
         saveToDb(nextValue)
-    
-    }, 1000/24), [],); // will be created only once initially
 
-   
+    }, 1000 / 24), []); // will be created only once initially
+
+
     const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
         setChecked(event.target.checked);
     };
@@ -87,8 +93,6 @@ export function InfoList(props: Props) {
             }
             debouncedSaveByCallBack(value);
         } else {
-           
-
             setState({
                 ...state,
                 [name]: event.target.value as string,
@@ -96,32 +100,32 @@ export function InfoList(props: Props) {
         }
     };
 
-
-
     //切换版本 获取二进制图片信息和图片数据
     useEffect(function checkVersion() {
 
-        if (folder != '' && currentPalet != "" && state.version != ""&&!loading) {
+        if (folder != '' && currentPalet != "" && state.version != "" && !loading) {
             //查找图片信息
             //  let data = readGraphicInfo(folder, state.version);
             //  console.log(data);
             setLoading(true);
             (async () => {
-                graphicInfo.current = null;
-                graphic.current = null;
+                animesInfo.current = null;
+                animePath.current = null;
                 console.log("version")
-                // let data = await readGraphicInfoByStream(folder, state.version)
-                let data = await readGraphicInfo(folder, allVersion[state.version as number]);
+                let data = await readAnimesInfo(folder, allAnime[state.version as number]);
                 SetAccount({
                     ...acount,
                     'value': data.length,
                 })
-                if(dbValue>data.length){//如果大，则需要重置
+                console.log('Anime', data)
+                if (dbValue > data.length) {//如果大，则需要重置
                     saveToDb(0);
                 }
-               
-                graphicInfo.current = data.graphicInfo
-                graphic.current = data.graphicPath
+
+                animesInfo.current = data.animesInfo
+                animePath.current = data.animePath
+                graphicsInfo.current = data.graphicsInfo
+                graphicPath.current = data.graphicPath
                 setLoading(false)
 
             })();
@@ -133,71 +137,106 @@ export function InfoList(props: Props) {
     }, [state.version]);
     //获取图片信息
     useEffect(function checkGraphicID() {
-        if (graphicInfo.current && graphicInfo.current.length != 0) {
+        if (animesInfo.current && animesInfo.current.length != 0) {
             // console.log("info")
-            let info: infoType = getImageInfo(dbValue, graphicInfo.current);
-             SetInfos(info)
+            let info: infoType = getAnimeInfo(dbValue, animesInfo.current);
+            SetInfos(info)
         }
-    }, [dbValue, graphicInfo.current])
+    }, [dbValue, animesInfo.current])
 
     // 获取图片数据
     useEffect(function checkGraphicInfo() {
-        if (graphic.current && graphic.current.length != 0 && infos) {
-            
+        if (animePath.current && animePath.current.length != 0 && infos) {
+
             (async () => {
                 let _palet = palets
-                if(tempPalet.length>0){
+                if (tempPalet.length > 0) {
                     _palet = tempPalet
                 }
-                let image: any = await getImage(infos, graphic.current, _palet)
+                let data: any = await getAnime(infos, animePath.current, _palet, graphicsInfo.current, graphicPath.current)
                 // console.log("getImage",image)
+                SetExtendInfo(data)
                 //console.log(image);
-                if (image && image.width > 0) {
-                    SetImage(image)
-                }
-               
+
             })();
         }
-    }, [infos, palets,tempPalet]);
+    }, [infos, palets, tempPalet]);
 
     //生成图片
     useEffect(() => {
         // console.log(image.width)
-        if (image.width > 0) {
+        console.log("images", extendInfo)
+        if (extendInfo && extendInfo.images.length > 0) {
+            cancelAnimationFrame(rAF.current);
             const context = canvas.current.getContext("2d");
+          
             const width = container.current.clientWidth
-            const height = container.current.clientHeight
+            const heigth = container.current.clientHeight
+            context.clearRect(0,0,width,heigth)
             canvas.current.width = width
-            canvas.current.height = height
+            canvas.current.height = heigth
             // context.save();
             // console.dir(container.current.clientWidth)
-            var imageData = new ImageData(
-                Uint8ClampedArray.from(image.data),
-                image.width,
-                image.height
-            );
-            // console.log("image")
-            context.putImageData(imageData, (width - image.width) / 2, (height - image.height) / 2);
-
-            const test = () => {
-                context.globalCompositeOperation = "lighter"; //destination-atop destination-over lighter
-                context.fillStyle = "#000000"
-                context.fillRect((width - image.width * 2) / 2, (height - image.height * 2) / 2, image.width * 2, image.height * 2);
-            }
+            let i = 0
+            let info = extendInfo.info
+            let images = extendInfo.images
+            let imagedatas = images.map((item: any)=>{
+                return  new ImageData(
+                    Uint8ClampedArray.from(item.data),
+                    item.width,
+                    item.height
+                );
+            })
+            
+            rAF.current = requestAnimationFrame(()=>{
+                let timestamp = info.time / info.frames 
+                let start = Date.now();
+                renderCanvas(context,start,0,imagedatas,timestamp,width,heigth)
+            })
+            
+           
         }
-    }, [image]);
+    }, [extendInfo]);
+
+
+    const renderCanvas = useCallback((context:CanvasRenderingContext2D,start: number,i:number,
+         imagedatas: ImageData[], timestamp: number,width: number,heigth: number) => {
+        
+            console.log(Date.now()-start,timestamp)
+        // console.log(start)
+        let durTime = Date.now() - start
+        if(durTime>timestamp){
+
+            let image = imagedatas[i]
+            context.clearRect(0,0,width,heigth)
+            context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
+            if (i >= imagedatas.length - 1) {
+                i = 0
+            } else {
+                i++
+            }
+            start = Date.now();
+            console.log(durTime)
+        }
+        
+        rAF.current = requestAnimationFrame(()=>{
+            renderCanvas(context,start,i,imagedatas,timestamp,width,heigth)
+        })
+     }, [extendInfo]);
+
+  
 
     const handleSave = () => {
         let fileName = 'testImg';
-        let mimeType:MIME_TYPE = "image/bmp";
-        if(checked){//为真表示透明，直接存为png
+        let mimeType: MIME_TYPE = "image/bmp";
+        if (checked) {//为真表示透明，直接存为png
             mimeType = "image/png";
-            fileName +='.png';
-        }else{//为假保存位bmp
+            fileName += '.png';
+        } else {//为假保存位bmp
             mimeType = "image/bmp";
-            fileName +='.bmp';
+            fileName += '.bmp';
         }
-        exportCanvasAsPNG(mimeType, canvas.current, fileName, image)
+        // exportCanvasAsPNG(mimeType, canvas.current, fileName, extendInfo)
     }
 
     return (
@@ -215,7 +254,7 @@ export function InfoList(props: Props) {
                         }}
                     >
                         <option aria-label="None" value="" />
-                        {allVersion.map((item, index) => {
+                        {allAnime.map((item, index) => {
                             return <option key={index} value={index}>{item.name}</option>
                         })}
 
@@ -240,7 +279,7 @@ export function InfoList(props: Props) {
                         }} type="number" value={state.imageId} name="imageId" onChange={handleChange} />
                     <IconButton onClick={() => {
                         let value = state.imageId >= acount.value - 1 ? 0 : Number(state.imageId) + 1;
-                        
+
                         debouncedSaveByCallBack(value)
                     }
 
@@ -249,7 +288,7 @@ export function InfoList(props: Props) {
                     </IconButton>
                 </Paper>
                 <Card>
-                    {image.data && <Button color="primary" onClick={handleSave}>保存</Button>}
+                    {extendInfo && <Button color="primary" onClick={handleSave}>保存</Button>}
 
                     <FormControlLabel
                         label="背景透明"
@@ -271,7 +310,7 @@ export function InfoList(props: Props) {
                     {Object.keys(myInfoList).map((key: string) => (
 
                         <Grid container spacing={1} key={key + state.imageId} className={classes.grid}>
-                            <GraphicInfoPanel id={key} infos={myInfoList} info={infos}  />
+                            <AnimeInfoPanel id={key} infos={myInfoList} info={infos} />
                         </Grid>
 
                     ))}
@@ -287,14 +326,15 @@ export function InfoList(props: Props) {
     );
 }
 
-const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer ,tempPalet:Buffer,allVersion:versionType[]}) => {
+const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer, tempPalet: Buffer, allVersion: versionType[], allAnime: allAnimeType[] }) => {
     return {
         folder: state.folder,
         currentPalet: state.currentPalet,
         palets: state.palets,
-        tempPalet:state.tempPalet,
-        allVersion:state.allVersion
+        tempPalet: state.tempPalet,
+        allVersion: state.allVersion,
+        allAnime: state.allAnime,
     }
 }
 
-export default connect(mapStateToProps)(InfoList)
+export default connect(mapStateToProps)(AnimeList)

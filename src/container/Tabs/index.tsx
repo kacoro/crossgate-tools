@@ -9,6 +9,7 @@ import FavoriteIcon from '@material-ui/icons/Favorite';
 import Box from '@material-ui/core/Box';
 import InfoList from '../InfoList'
 import PaletList from '../PaletList'
+import  AnimeList  from '../AnimeList';
 function TabPanel(props: { [x: string]: any; children: any; value: any; index: any; }) {
   const { children, value, index, ...other } = props;
   const classes = useStyles();
@@ -75,11 +76,11 @@ export default function ScrollableTabsButtonForce() {
           indicatorColor="primary"
           textColor="primary"
           centered
-          
           aria-label="scrollable force tabs example"
         >
-          <Tab label="图片" icon={<CropOriginal />} {...a11yProps(0)} />
-          <Tab label="调色板" icon={<FavoriteIcon />} {...a11yProps(1)} />
+          <Tab label="动画" icon={<FavoriteIcon />} {...a11yProps(0)} />
+          <Tab label="图片" icon={<CropOriginal />} {...a11yProps(1)} />
+          <Tab label="调色板" icon={<FavoriteIcon />} {...a11yProps(2)} />
           {/* <Tab label="地图" icon={<FavoriteIcon />} {...a11yProps(1)} />
           <Tab label="宠物" icon={<PersonPinIcon />} {...a11yProps(2)} />
           <Tab label="人物" icon={<HelpIcon />} {...a11yProps(3)} />
@@ -87,17 +88,22 @@ export default function ScrollableTabsButtonForce() {
         </Tabs>
       </AppBar>
       <TabPanel value={value} index={0} className={classes.panel}>
-        <InfoList />
+           <AnimeList/>
       </TabPanel>
-      <TabPanel value={value} index={1}>
-        <PaletList />
+      <TabPanel value={value} index={1} className={classes.panel}>
+       <InfoList />
       </TabPanel>
-      <TabPanel value={value} index={2}>
-        Item Three
+      <TabPanel value={value} index={2} className={classes.panel}>
+          <PaletList/>
+      </TabPanel>
+      {/* <TabPanel value={value} index={2}>
       </TabPanel>
       <TabPanel value={value} index={3}>
-        Item Four
+        Item Three
       </TabPanel>
+      <TabPanel value={value} index={4}>
+        Item Four
+      </TabPanel> */}
     </Box>
   );
 }

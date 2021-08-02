@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 const { dialog } = require('electron').remote;
-import { g_c0_15, g_c240_255, g_palet, transBuffer, arrTrans } from "./config";
+import { g_c0_15, g_c240_255, g_palet, arrTrans } from "./config";
 import { PaletsType } from '../Store/reduce';
 export const readPalet = (binPath: string, index: number) => {
     let palet: any

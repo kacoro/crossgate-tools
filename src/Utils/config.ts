@@ -91,7 +91,7 @@ export const g_ImgMap = [
     { name: "龙之沙时计", info: "GraphicInfoEx_4.bin", file: "GraphicEx_4.bin" },		// 龙之沙时计
     { name: "乐园之卵", info: "GraphicInfo_Joy_22.bin", file: "Graphic_Joy_22.bin" },	// 乐园之卵
     { name: "乐园之卵（精灵)", info: "GraphicInfoV3_18.bin", file: "GraphicV3_18.bin" },	// 乐园之卵（精灵
-    
+
     // {name:"", info:".bin", file: ".bin" },
 
     //{ "GraphicInfoV3_18.bin", "GraphicV3_18.bin" }, // 乐园之卵（精灵
@@ -127,74 +127,14 @@ export const arrTrans = (num: number, arr: Array<any>) => { // 一维数组转�
     arr.forEach((item, index) => {
         const page = Math.floor(index / num); // 计算该元素为第几个素组内
         if (!iconsArr[page]) { // 判断是否存在
-            iconsArr[page] = [];
+            iconsArr[page] = []; ``
         }
         iconsArr[page].push(item);
     });
     return iconsArr;
 }
-// const config = {
-// 	g_ImgMap,g_palet, g_c0_15, g_c240_255,arrTrans, MAX_IMG_SIZE, DEFAULT_CPG_LEN, imgData, imgInfoHead
-// }
 
-type strType = string | any[];
-type itemType = any | any[];
 
-export function transBuffer(palet: any, encode: string = 'DEC') {//先把数组倒序，转化为二进制，拼接之后再进行进制转化，默认不转。BIN_OCT_HEX_DEC
-
-    // 43D // 1085 //10000111101 
-    //00100111101
-    var str: strType = ""
-
-    if (encode == 'BIN') {
-        palet = palet.reverse().map((item: itemType) => {
-            str += item.toString(2)
-        })
-        // 首位是1，为负数 减一取反
-        var flag = false
-        if (str.slice(0, 1) == "1") {//首位是1 为负数
-            //补码
-            str = str.slice(1, str.length)
-            var index = 0
-            str = str.split("").reverse().map((item: any, i) => {
-                if (!flag && item != 0) {//找到第一个1。不进行操作
-                    flag = true
-                    item = 0
-                    index = i
-                } else {
-
-                }
-                return item
-            })
-            for (let i: number = 0; i < index; i++) {
-                str[i] = 1
-            }
-            str = str.map(s => {
-                return s > 0 ? s = 0 : s = 1
-            })
-            str = str.reverse().join("").replace(/(^0*)/g, "")
-            return parseInt("-" + str, 2)
-        }
-    }
-
-    palet = palet.reverse().map((item: itemType) => {
-        if (item < 16) {
-
-            str += "0" + item.toString(16)
-        } else {
-            str += "" + item.toString(16)
-        }
-        if (encode == "drr") {
-            // console.log("item:",item,item.toString(16))
-        }
-    })
-    str = str.replace(/(^0*)/g, "");
-    if (encode == "drr") {
-        // console.log("hex:",str)
-    }
-
-    return str == '' ? 0 : parseInt(str, 16)
-}
 interface infoType {
     [key: string]: any
 }
@@ -204,7 +144,7 @@ export const clampNumber = (num: number, a: number, b: number) => {
 }
 
 export const myInfoList: infoType = {
-    'id': { name: '图片编号', value: 0, isShow: true },
+    'id': { name: '图片序号', value: 0, isShow: true },
     'ddr': { name: '起始位置', value: 0, isShow: true },  //图片在数据文件中的起始位置 0 开始
     'length': { name: '图片块长度', value: 0, isShow: true },   //图片数据块的大小 块长度
     'x': { name: 'X偏移', value: 0, isShow: true },          //偏移量X;显示图片时，横坐标偏移X
@@ -218,78 +158,26 @@ export const myInfoList: infoType = {
     'tileId': { name: '地图编号', value: 0, isShow: true }
 };
 
+// 隐藏调色板本身其实是一些4X1的自带调色板的图片，它们的地图编号字段被重新解释了，表示使用这个调色板的动画序号，比如地图编号为0x1B680，那么在还原第0x1B680号动画的时候，就要使用该图片所带的调色板。
+// 隐藏调色板存在于GraphicInfoV3_*.bin中，即使是AnimeInfo_PUK2_*.bin中的动画也是使用这里的调色板，从3840幅图片开始是隐藏调色板，不过并不是全部连续存在的，所以需要判断，除了宽4高1外，普通图片的地图编号高位为0或者3(乐园版本的地图)，调色板的则不是，可以依此辨别。 
 
-/**
- * JSS自定的一种Run-Length算法
- *
- * @param {any[]} raw
- * @return {*}  {any[]}
- */
-const decodeImgData = (raw: any[]): any[] => {
-    console.log(raw)
-    var decodeData: any[] = []
-    let raw_length = raw.length
-    let count = 0
-    let a = []
-    let x = 0;
+// 乐园之卵的动画也有很大改变，同一类型的各种宠物，以前是各自有独立的图片，现在是通过改变调色板来区别的(我认为如果能将玩家角色这样简化就好了，宠物反而不应这样)，方向也简化了，右边的三个方向是左边对称过去的，这是一种偷工减料，不过也减少了文件的体积……同时也导致了数据格式的改变。动画信息文件中的数据头结构变化：
 
-    while (raw.length > 0) {
-        let pixel = raw.shift()
-        let condistion = pixel & 0xf0
-
-        switch (condistion) {
-            case 0x00:  //0n 长度为n的字符串
-                count = pixel & 0x0f;
-                decodeData = decodeData.concat(raw.splice(0, count))
-                break
-            case 0x10: //1n 长度为n*0x100+m的字符串
-                count = (pixel & 0x0f) * 0x100 + raw.shift();
-                decodeData = decodeData.concat(raw.splice(0, count))
-                break
-            case 0x20: // 0x2n 第二个字节x，第三个字节y，第四个字节c，代表n*0x10000+x*0x100+y个字符
-                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
-                decodeData = decodeData.concat(raw.splice(0, count))
-                break
-            case 0x80://填充n个X
-                count = pixel & 0x0F;
-                a = new Array(count).fill(raw.shift())
-                decodeData = decodeData.concat(a)
-                break
-            case 0x90: //填充n*0x100+m个X
-                x = raw.shift()
-                count = (pixel & 0x0F) * 0x100 + raw.shift();
-                a = new Array(count).fill(x)
-                decodeData = decodeData.concat(a)
-                break
-            case 0xa0: //填充x*0x10000+y*0x100+z个X
-                x = raw.shift()
-                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
-                a = new Array(count).fill(x)
-                decodeData = decodeData.concat(a)
-                break
-            case 0xc0: // 填充n个背景色
-                count = pixel & 0x0F;
-                a = new Array(count).fill(BG_COLOR)
-                decodeData = decodeData.concat(a)
-                break
-            case 0xd0:  // 填充n*0x100+m个背景色
-                count = (pixel & 0x0F) * 0x100 + raw.shift();
-                a = new Array(count).fill(BG_COLOR)
-                decodeData = decodeData.concat(a)
-                break
-            case 0xe0:  // 填充x*0x10000+y*0x100+z个背景色
-                count = (pixel & 0x0F) * 0x10000 + raw.shift() * 0x100 + raw.shift();
-                a = new Array(count).fill(BG_COLOR)
-                decodeData = decodeData.concat(a)
-                break
-            default:
-                console.log(`extration is stopped. Bytes remines ${decodeData.length}, total ${raw_length})`)
-                console.log(`${decodeData.length} bytes has been extracted.`)
-                break
-        }
-    }
-    //console.log(idx,iPos)
-    return decodeData;
-}
-
-export {decodeImgData}
+export const AnimeInfoList: infoType = {                   // 字节  说明
+    //动画地址信息 长度12字节
+    'id': { name: '动画序号 ', value: 0, isShow: true },    //  4   动画序号
+    'ddr': { name: '地址', value: 0, isShow: true },        //  4   动画在数据文件中的起始位置
+    'length': { name: '动作数目', value: 0, isShow: true }, //  2   动作数目
+    'unknow': { name: '未知', value: 0, isShow: true },     //  2   未知
+    //Anime 动画详细信息 长度12字节
+    'direction': { name: '方向', value: 0, isShow: true },  //  2   0-7分别表示8个方向
+    'action': { name: '动作 ', value: 0, isShow: true },    //  2   0-7分别表示8个方向
+    'time': { name: '时间 ', value: 0, isShow: true },      //  2   该动作完成一遍所需时间，单位为毫秒
+    'frames': { name: '帧数 ', value: 0, isShow: true },    //  4   该动画有多少帧，决定后面数据的大小
+    'pelet': { name: '调色版编号', value: 0, isShow: true }, //2   2.0以后的 不一定需要用词来判断
+    'reverse': { name: '反向', value: 0, isShow: true },       //2   2.0以后的 若为奇数表示该序列的图片左右反向
+    //序列号 动画详细信息 长度10字节
+    'graphicId': { name: '图片号 ', value: 0, isShow: true },// 4    该帧所使用的图片
+    'graphicUnknow': { name: '未知 ', value: 0, isShow: true }// 4    该帧所使用的图片
+};
+//可能由于开发时的某些原因，造成存放了3遍序列，并且按前两遍解出的动画是错误的，要以第3遍为准，第2375号角色才是第0号  经过解析文件，发现其实覆盖了4遍

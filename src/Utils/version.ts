@@ -6,18 +6,18 @@ interface versionDict  {
     [key:string]:string
 }
 const versionDict:versionDict =  {
-    "Graphic_20":"命运的开启者",
-    "GraphicEx_4":"龙之沙时计",
-    "Graphic_Joy_22":"乐园之卵",
-    "GraphicV3_18":"乐园之卵（精灵",
-    "GraphicEx_5":"GraphicEx_5",
-    "Graphicga_1":"Graphicga_1",
-    "GraphicV3_19":"GraphicV3_19",
-    "Graphic_66":"Graphic_66",
-    "Graphic_Joy_125":"Graphic_Joy_125",
-    "Graphic_Joy_CH1":"Graphic_Joy_CH1",
-    "Graphic_Joy_EX_62":"Graphic_Joy_EX_62",
-    "Graphic_Joy_EX_80":"Graphic_Joy_EX_80"
+    "20":"命运的开启者",
+    "Ex4":"龙之沙时计",
+    "Joy22":"乐园之卵",
+    "V318":"乐园之卵（精灵",
+    "Ex5":"Ex5",
+    "ga1":"ga1",
+    "V319":"V319",
+    "66":"66",
+    "Joy125":"Joy125",
+    "JoyCH1":"JoyCH1",
+    "JoyEX62":"JoyEX62",
+    "JoyEX80":"JoyEX80"
 }
     
 export interface versionType {
@@ -45,8 +45,10 @@ export interface versionType {
                 // data = fs.readFileSync(path.join(paletsPath,filename))
                 //  console.log(filename)
                  let file = filename.replace("Info","")
-                 let name = file.replace(".bin","")
+                 let name = file.replace(".bin","").replace("Graphic","")
+                 name = name.replace(/_/g,"")
                  console.log(name)
+                //  console.log(name)
                  readAllVersion.push({
                      name:versionDict[name]||name,
                      realName:name,
@@ -59,6 +61,6 @@ export interface versionType {
     } catch (error) {
         alert(error.message+"，请重新选择目录！") 
     }
-    console.log(readAllVersion)
+    // console.log(readAllVersion)
     return readAllVersion;
 }

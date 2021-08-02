@@ -23,6 +23,9 @@ interface initState{
   allPalet:paletType[],
   tempPalet:PaletsType,
   allVersion:versionType[],
+  allAnimeInfo:Uint8Array[],
+  allAnime:Uint8Array[],
+  currentAinime:number
 }
 
 const initialState:initState = {
@@ -34,7 +37,10 @@ const initialState:initState = {
   currentImage: 0,
   allPalet: [] ,
   tempPalet: [] , //临时存储
-  allVersion:[]
+  allVersion:[],
+  allAnimeInfo:[],
+  allAnime:[],
+  currentAinime:0
 }
 
 const reducer = (state = initialState, action: any) => {
@@ -44,8 +50,17 @@ const reducer = (state = initialState, action: any) => {
         ...state,
         folder: action.folder,
         allPalet: action.allPalet,
-        allVersion:action.allVersion
+        allVersion:action.allVersion,
+        allAnime:action.allAnime
       }
+     case actionTypes.SELECT_FOLDER_ANIME:
+      return {
+        ...state,
+        folder: action.folder,
+        allPalet: action.allPalet,
+        allAnime:action.allAnime
+      }
+
 
     case actionTypes.SELECT_PALET:
       return {
