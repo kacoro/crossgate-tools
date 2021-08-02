@@ -45,8 +45,7 @@ export interface versionType {
                 // data = fs.readFileSync(path.join(paletsPath,filename))
                 //  console.log(filename)
                  let file = filename.replace("Info","")
-                 let name = file.replace(".bin","").replace("Graphic","")
-                 name = name.replace(/_/g,"")
+                 let name = file.replace(".bin","").replace("Graphic","").replace(/_/g,"")
                  console.log(name)
                 //  console.log(name)
                  readAllVersion.push({

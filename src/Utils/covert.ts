@@ -43,6 +43,8 @@ function bytes2Int(palet: Uint8Array, signed = false): number {
 }
 
 
+
+
 /**
  * int 转 字节数组
  *

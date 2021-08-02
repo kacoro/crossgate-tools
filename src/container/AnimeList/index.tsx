@@ -52,7 +52,7 @@ export function AnimeList(props: Props) {
     const graphicsInfo = useRef(Buffer.allocUnsafe(0))
     const animePath = useRef('')
     const graphicPath = useRef('')
-    const rAF  = useRef(null)
+    const rAF = useRef(null)
     // const [image, SetImage] = useState({} as Bitmap);
     const [state, setState] = React.useState<{ version: string | number; imageId: number }>({
         version: '',
@@ -169,10 +169,10 @@ export function AnimeList(props: Props) {
         if (extendInfo && extendInfo.images.length > 0) {
             cancelAnimationFrame(rAF.current);
             const context = canvas.current.getContext("2d");
-          
+
             const width = container.current.clientWidth
             const heigth = container.current.clientHeight
-            context.clearRect(0,0,width,heigth)
+            context.clearRect(0, 0, width, heigth)
             canvas.current.width = width
             canvas.current.height = heigth
             // context.save();
@@ -180,51 +180,64 @@ export function AnimeList(props: Props) {
             let i = 0
             let info = extendInfo.info
             let images = extendInfo.images
-            let imagedatas = images.map((item: any)=>{
-                return  new ImageData(
+            let imagedatas = images.map((item: any) => {
+                return new ImageData(
                     Uint8ClampedArray.from(item.data),
                     item.width,
                     item.height
                 );
             })
-            
-            rAF.current = requestAnimationFrame(()=>{
-                let timestamp = info.time / info.frames 
-                let start = Date.now();
-                renderCanvas(context,start,0,imagedatas,timestamp,width,heigth)
+
+            console.log(imagedatas)
+
+            rAF.current = requestAnimationFrame(() => {
+                let timestamp = info.time / info.frames
+                let start = 0;
+                renderCanvas(context, start, 0, imagedatas, timestamp, width, heigth)
             })
-            
-           
+
+
         }
     }, [extendInfo]);
 
+    const canvasOffscreen = useCallback((imagedatas)=>{
+    },[extendInfo])
 
-    const renderCanvas = useCallback((context:CanvasRenderingContext2D,start: number,i:number,
-         imagedatas: ImageData[], timestamp: number,width: number,heigth: number) => {
+    const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number=null, i: number,
+        imagedatas: ImageData[], timestamp: number, width: number, heigth: number,repeat=false) => {
+        if(!start) {
+            start = Date.now()
+            console.time("start")
+        }
+        // console.log(Date.now() - start, timestamp)
         
-            console.log(Date.now()-start,timestamp)
-        // console.log(start)
-        let durTime = Date.now() - start
-        if(durTime>timestamp){
+         let durTime = Date.now() - start
+         console.log(durTime)
 
-            let image = imagedatas[i]
-            context.clearRect(0,0,width,heigth)
+         //默认从第一帧开始
+        if (durTime >= timestamp ||i==0) {
+            console.timeEnd("start")
+            let index = i % imagedatas.length
+            let image = imagedatas[index]
+            context.clearRect(0, 0, width, heigth)
             context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
-            if (i >= imagedatas.length - 1) {
-                i = 0
-            } else {
-                i++
-            }
-            start = Date.now();
-            console.log(durTime)
+            console.log({start})
+            i++
+            start = null
+            
         }
         
-        rAF.current = requestAnimationFrame(()=>{
-            renderCanvas(context,start,i,imagedatas,timestamp,width,heigth)
-        })
-     }, [extendInfo]);
+       
+        if(repeat||i < imagedatas.length  ){
+            rAF.current = requestAnimationFrame(() => {
+                renderCanvas(context, start, i, imagedatas, timestamp, width, heigth,repeat)
+            })
+            
+        }
+        
+    }, [extendInfo]);
 
-  
+
 
     const handleSave = () => {
         let fileName = 'testImg';
