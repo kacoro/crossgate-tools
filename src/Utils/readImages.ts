@@ -44,6 +44,9 @@ const readGraphiByStream = async (binPath: string, infoJson: infoType) => {
     let headSteam = createReadStream(binPath, { start: ddr, end: ddr + headLength - 1 })
 
     let head = await readStream(headSteam)
+    // let rd = bytes2String(head.subarray(0, 2))
+    let rd = head.subarray(0, 2).toString("utf-8")
+    // console.log(rd)
     let version = head[2]
     let localPaletInfo = {
         version: version,
@@ -91,14 +94,14 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
         let elementSize = infoJson.width * infoJson.height
         // console.log(data.length,infoJson.length - headLength,elementSize)
         // var imageData = deCoder(data, 1,infoJson.length - headLength)
-        console.time("decode")
+        // console.time("decode")
         if (version == 3) {
             elementSize += localPaletInfo.length
         }
         // var imageData = decodeImgData(graphic.toJSON().data)
         var imgBuffer = decodeByBuferr(graphic, elementSize)
         let imageData = imgBuffer.toJSON().data
-        console.timeEnd("decode")
+        // console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
             let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo)
@@ -128,13 +131,14 @@ function getInfo(i = 0, palet: Buffer) {
         x: bytes2Int(palet.subarray(12, 16), true),  //偏移量X;显示图片时，横坐标偏移X
         y: bytes2Int(palet.subarray(16, 20), true),  //偏移量Y
         width: bytes2Int(palet.subarray(20, 24)),
-        height: bytes2Int(palet.subarray(24, 28)),
-        east: palet[28],
-        south: palet[29],
-        flag: palet[30],
-        unKnow: palet.subarray(31, 36),
-        tileId: bytes2Int(palet.subarray(36, 40))
+        height: bytes2Int(palet.subarray(24, 28)), 
+        east: palet[28],  //占地东
+        south: palet[29], //占地南
+        flag: palet[30], //标记
+        unKnow: palet.subarray(31, 36).toJSON(), //5个字节
+        tileId: bytes2Int(palet.subarray(36, 40)) //4个字节
     }
+    // console.log(json)
     return json;
 }
 
@@ -177,8 +181,8 @@ const filleImgPixel = (prop: infoType, data: any[], palet: PaletsType[], localPa
             imgData.push([0, 0, 0, 0])
         } else {
             try {
-                let [r, g, b] = palet[pixel]
-                let a = 255
+                let [r, g, b,a] = palet[pixel]
+                if(typeof a == "undefined")  a = 255
                 imgData.push([r, g, b, a])
             } catch (error) {
                 //调色板上没有这个颜色时

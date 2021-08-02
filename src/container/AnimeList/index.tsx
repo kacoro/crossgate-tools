@@ -213,12 +213,11 @@ export function AnimeList(props: Props) {
 
 
     const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number = null, i: number,
-        sprites:ImageBitmap[], timestamp: number, width: number, heigth: number, repeat = false) => {
+        sprites:ImageBitmap[], timestamp: number, width: number, heigth: number, repeat = false,scale= 1) => {
         if (!start) {
             start = Date.now()
             // console.time("start")
         }
-        // console.log(Date.now() - start, timestamp)
 
         let durTime = Date.now() - start
         // console.log(durTime)
@@ -229,21 +228,19 @@ export function AnimeList(props: Props) {
             let index = i % sprites.length
             let image = sprites[index]
             context.clearRect(0, 0, width, heigth)
-            context.drawImage(image, 0, 0, image.width, image.height,(width - image.width) / 2, (heigth - image.height) / 2,image.width,image.height)
+            context.drawImage(image, 0, 0, image.width, image.height,(width - image.width) / 2, (heigth - image.height) / 2,image.width*scale,image.height*scale)
             // context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
             // console.log({ start,i })
             // console.timeEnd("start")
             i++
             start = null
-
+            
         }
-
 
         if (repeat || i < sprites.length) {
             rAF.current = requestAnimationFrame(() => {
                 renderCanvas(context, start, i, sprites, timestamp, width, heigth, repeat)
             })
-
         }
 
     }, [extendInfo]);

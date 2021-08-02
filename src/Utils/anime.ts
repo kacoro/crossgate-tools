@@ -16,10 +16,10 @@ interface AnimeDict {
     [key: string]: string
 }
 const versionDict: AnimeDict = {
-    "20": "命运的开启者",
-    "Ex4": "龙之沙时计",
-    "Joy22": "乐园之卵",
-    "V318": "乐园之卵（精灵",
+    "3": "命运的开启者",
+    "Ex1": "龙之沙时计",
+    "V37": "乐园之卵（精灵）",
+    "V38": "乐园之卵（精灵",
     "Ex5": "Ex5",
     "ga1": "ga1",
     "V319": "V319",
@@ -36,7 +36,8 @@ export interface allAnimeType {
     info: string,
     file: string,
     graphicInfoBin?: string,
-    graphicBin?: string
+    graphicBin?: string,
+    version?:number
 }
 
 export const readAllAnime = (binPath: string): allAnimeType[] => {
@@ -51,7 +52,7 @@ export const readAllAnime = (binPath: string): allAnimeType[] => {
                 let name = file.replace(".Bin", "").replace(".bin", "").replace("Anime", "").replace(/_/g, "")
 
                 //找到匹配的图档
-                //  console.log(name)
+                console.log(name)
                 readAllAnime.push({
                     name: versionDict[name] || name,
                     realName: name,
@@ -59,6 +60,7 @@ export const readAllAnime = (binPath: string): allAnimeType[] => {
                     file: file,
                     graphicInfoBin: '',
                     graphicBin: '',
+                    version:parseInt(name.replace(/[a-zA-Z]/g,''))
                 })
             }
         })
@@ -75,15 +77,22 @@ export const readAllAnime = (binPath: string): allAnimeType[] => {
                     realName: name,
                     info: filename,
                     file: file,
+                    version:parseInt(name.replace(/[a-zA-Z]/g,''))
                 })
 
             }
         })
-        readAllAnime = readAllAnime.sort()
-        readAllVersion = readAllVersion.sort()
         readAllAnime.map((item, index) => {
             item.graphicInfoBin = readAllVersion[index].info,
-                item.graphicBin = readAllVersion[index].file
+            item.graphicBin = readAllVersion[index].file
+            if(item.name=="Joy91"){
+                item.graphicInfoBin = readAllVersion[index-1].info,
+                item.graphicBin = readAllVersion[index-1].file    
+            }
+            if(item.name=="Joy13"){
+                item.graphicInfoBin = readAllVersion[index+1].info,
+                item.graphicBin = readAllVersion[index+1].file    
+            }
             return item
         })
         console.log({ readAllAnime, readAllVersion })
@@ -116,17 +125,20 @@ interface animesInfoype {
     id: number
     ddr: number
     length: number
-    unknow: number
+    unknow: string
 }
 interface animeInfoType {
     direction: number
     action: number
     time: number
     frames: number
-    graphicIds?: graphicIds[]
+    graphicIds?: graphicIds[],
+    paletId?:number
+    reverse?:number
+    unknow?:string
 } interface graphicIds {
     id: number
-    Unknow: number
+    Unknow: string
     data?: Buffer
     width?: number
     height?: number
@@ -142,7 +154,7 @@ function getInfo(palet: Buffer, type = 0): animeInfoTypes {
             id: bytes2Int(palet.subarray(0, 4)),  //动画序号
             ddr: bytes2Int(palet.subarray(4, 8)), //动画在数据文件中的起始位置 0 开始
             length: bytes2Int(palet.subarray(8, 10)), //动作数目
-            unknow: bytes2Int(palet.subarray(10, 12), true),  //未知
+            unknow: (palet.subarray(10, 12)).toString("ucs-2"),  //未知
         }
     } else if (type == 1) { //动画信息
         json = {    //Buffer.slice末尾不包含
@@ -151,10 +163,20 @@ function getInfo(palet: Buffer, type = 0): animeInfoTypes {
             time: bytes2Int(palet.subarray(4, 8)), // 该动作完成一遍所需时间，单位为毫秒
             frames: bytes2Int(palet.subarray(8, 12)), //该动画有多少帧，决定后面数据的大小
         }
+    }else if (type == 3) { //3.0之后的 动画信息 加了8个字节。变为20个字节
+        json = {    //Buffer.slice末尾不包含
+            direction: bytes2Int(palet.subarray(0, 2)),   //0-7分别表示8个方向
+            action: bytes2Int(palet.subarray(2, 4)), //表示该动作的含义，比如坐下或者走
+            time: bytes2Int(palet.subarray(4, 8)), // 该动作完成一遍所需时间，单位为毫秒
+            frames: bytes2Int(palet.subarray(8, 12)), //该动画有多少帧，决定后面数据的大小
+            paletId:bytes2Int(palet.subarray(12, 14)), //调色板号 没完全弄清楚，我不用它来判断
+            reverse:bytes2Int(palet.subarray(14, 16)), //若为奇数表示该序列的图片左右反向
+            unknow:palet.subarray(16, 20).toString('utf-8'), //为0xFFFFFFFF，可能是结束符，便于以后再扩充？
+        }
     } else { //动作序列号
         json = {    //Buffer.slice末尾不包含
             id: bytes2Int(palet.subarray(0, 4)),      // 该帧所使用的图片
-            Unknow: bytes2Int(palet.subarray(4, 10)), //动画在数据文件中的起始位置 0 开始
+            Unknow: palet.subarray(4, 10).toString("utf-8"), //动画在数据文件中的起始位置 0 开始
         }
     }
 
@@ -177,12 +199,24 @@ export function getAnimeInfo(i: number, graphicInfo: Buffer) {
 
 const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
     let { ddr, length } = infoJson
+    console.log({binPath,infoJson})
+    // 版本判断 Ex_1  _3 之外的就是3.0，需要特殊处理
+    //正向匹配
+    let checkV3 =  binPath.includes('V3') ||binPath.includes('Joy')  
+    console.log({checkV3})
+    
     let headLength = 12
+    if(checkV3){
+        headLength = 20
+    }
     let headSteam = createReadStream(binPath, { start: ddr, end: ddr + headLength - 1 })
 
     // 后面就跟有多少个序列号，每个序列号长10字节。
     let head = await readStream(headSteam)
     let headInfo = getInfo(head, 1) as animeInfoType
+    if(checkV3){
+        headInfo = getInfo(head,3) as animeInfoType
+    }
     let graphicIds = []
     let graphicHeadLength = 10
     for (let index = 0; index < headInfo.frames; index++) {
@@ -209,10 +243,10 @@ interface infoType {
 //获取单个动画信息
 export async function getAnime(infoJson: infoType, animePath: string, palet: any, graphics: Buffer, graphicPath: string) {
     if (!infoJson || !animePath || !palet) return false
-    let length = graphics.length / 40
+
     // console.log({ graphics, length, graphicPath })
     const { info } = await readAnimeByStream(animePath, infoJson)
-
+    console.log(info)
     //读取图片
     let images: Bitmap[] = []
     for (let index = 0; index < info.graphicIds.length; index++) {
