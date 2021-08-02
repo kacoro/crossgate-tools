@@ -15,7 +15,7 @@ import { readAnimesInfo, getAnimeInfo, getAnime } from '../../Utils/anime'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList } from '../../Utils/config'
 import { throttle, debounce } from '@kacoro/utils'
-import { exportCanvasAsPNG, MIME_TYPE } from "../../Utils/canvas"
+import { exportCanvasAsPNG, MIME_TYPE, canvasOffScreen } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
 import PaletEditor from '../PaletEditor'
 import { versionType } from 'src/Utils/version';
@@ -180,61 +180,72 @@ export function AnimeList(props: Props) {
             let i = 0
             let info = extendInfo.info
             let images = extendInfo.images
-            let imagedatas = images.map((item: any) => {
-                return new ImageData(
+            let imagedatas:[Promise<ImageBitmap>] = images.map((item: any) => {
+                let imageData = new ImageData(
                     Uint8ClampedArray.from(item.data),
                     item.width,
                     item.height
                 );
+                return createImageBitmap(imageData, 0, 0, item.width, item.height)
             })
 
-            console.log(imagedatas)
+            Promise.all(imagedatas).then(function (sprites) {
+                // Draw each sprite onto the canvas
+                // console.log({ sprites })
+                rAF.current = requestAnimationFrame(() => {
+                    let timestamp = info.time / info.frames
+                    let start = 0;
+                    renderCanvas(context, start, 0, sprites, timestamp, width, heigth)
+                })
+            });
+            // let ctxs = canvasOffScreen(imagedatas)
+            // console.log(imagedatas)
 
-            rAF.current = requestAnimationFrame(() => {
-                let timestamp = info.time / info.frames
-                let start = 0;
-                renderCanvas(context, start, 0, imagedatas, timestamp, width, heigth)
-            })
+            // rAF.current = requestAnimationFrame(() => {
+            //     let timestamp = info.time / info.frames
+            //     let start = 0;
+            //     renderCanvas(context, start, 0, imagedatas, timestamp, width, heigth)
+            // })
 
 
         }
     }, [extendInfo]);
 
-    const canvasOffscreen = useCallback((imagedatas)=>{
-    },[extendInfo])
 
-    const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number=null, i: number,
-        imagedatas: ImageData[], timestamp: number, width: number, heigth: number,repeat=false) => {
-        if(!start) {
+    const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number = null, i: number,
+        sprites:ImageBitmap[], timestamp: number, width: number, heigth: number, repeat = false) => {
+        if (!start) {
             start = Date.now()
-            console.time("start")
+            // console.time("start")
         }
         // console.log(Date.now() - start, timestamp)
-        
-         let durTime = Date.now() - start
-         console.log(durTime)
 
-         //默认从第一帧开始
-        if (durTime >= timestamp ||i==0) {
-            console.timeEnd("start")
-            let index = i % imagedatas.length
-            let image = imagedatas[index]
+        let durTime = Date.now() - start
+        // console.log(durTime)
+
+        //默认从第一帧开始
+        if (durTime >= timestamp || i == 0) {
+           
+            let index = i % sprites.length
+            let image = sprites[index]
             context.clearRect(0, 0, width, heigth)
-            context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
-            console.log({start})
+            context.drawImage(image, 0, 0, image.width, image.height,(width - image.width) / 2, (heigth - image.height) / 2,image.width,image.height)
+            // context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
+            // console.log({ start,i })
+            // console.timeEnd("start")
             i++
             start = null
-            
+
         }
-        
-       
-        if(repeat||i < imagedatas.length  ){
+
+
+        if (repeat || i < sprites.length) {
             rAF.current = requestAnimationFrame(() => {
-                renderCanvas(context, start, i, imagedatas, timestamp, width, heigth,repeat)
+                renderCanvas(context, start, i, sprites, timestamp, width, heigth, repeat)
             })
-            
+
         }
-        
+
     }, [extendInfo]);
 
 

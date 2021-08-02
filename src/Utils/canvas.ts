@@ -54,3 +54,58 @@ export function exportCanvasAsPNG(MIME_TYPE: MIME_TYPE = "image/png", canvas: HT
     dlLink.click();
     document.body.removeChild(dlLink);
 }
+
+
+    /**
+     *  //不在动画中使用 putImageData 方法,提前离屏处理
+     *
+     * @param {HTMLCanvasElement[]} imagedatas
+     * @return {*} 
+     */
+    const canvasOffScreen = (imagedatas:ImageData[])=>{
+        let coxs:HTMLCanvasElement[] = []
+        imagedatas.forEach((image:ImageData)=>{
+            var cos:HTMLCanvasElement = document.createElement('canvas');
+            cos.width = image.width;
+            cos.height = image.height;
+            cos.getContext('2d').putImageData(image,image.width,image.height)
+            
+            coxs.push(cos)
+            //  context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
+        })
+        return coxs
+    }
+
+    
+
+     /**
+     *  //不在动画中使用 putImageData 方法,提前离屏处理
+     *   OffscreenCanvas  API，ImageBitmap 和 ImageBitmapRenderingContext，
+     * @param {HTMLCanvasElement[]} imagedatas
+     * @return {*} 
+     */
+      const canvasOffScreen2 = (imagedatas:ImageData[])=>{
+
+        let coxs:ImageBitmap [] = []
+        // imagedatas.forEach((image:ImageData)=>{
+        //     var cos =document.createElement('canvas')
+        //     document.body.appendChild(cos);  
+        //     cos.width = image.width;
+        //     cos.height = image.height;
+        //     cos.getContext('2d').putImageData(image,image.width,image.height)
+        //     var two = cos.getContext("bitmaprenderer");
+        //     var osc = new OffscreenCanvas(image.width, image.height);
+           
+        //     let  bitmapOne = osc.transferToImageBitmap();
+        //     let bitmap = two.transferFromImageBitmap(bitmapOne)
+        //     console.log(bitmap)
+        //     // coxs.push(bitmap)
+        //     //  context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
+        // })
+        return coxs
+    }
+
+
+
+
+    export {canvasOffScreen}

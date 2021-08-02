@@ -79,6 +79,8 @@ export const readAllAnime = (binPath: string): allAnimeType[] => {
 
             }
         })
+        readAllAnime = readAllAnime.sort()
+        readAllVersion = readAllVersion.sort()
         readAllAnime.map((item, index) => {
             item.graphicInfoBin = readAllVersion[index].info,
                 item.graphicBin = readAllVersion[index].file
