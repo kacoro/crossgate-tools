@@ -2,18 +2,19 @@ import * as actionTypes from "./actionTypes"
 import {readGraphicInfo} from "../Utils/readImages";
 import {readPalet,readAllPalet, paletType} from "../Utils/readPalets";
 import { readAllVersion, versionType } from "../Utils/version";
-import { allAnimeType, readAllAnime } from "../Utils/anime";
-export const selectFolder = (folder: any,allPalet:paletType[],allVersion: versionType[],allAnime: allAnimeType[]) => {
+import { allAnimeType, hiddenPaletInfoType, readAllAnime } from "../Utils/anime";
+export const selectFolder = (folder: any,allPalet:paletType[],allVersion: versionType[],
+  allAnime: allAnimeType[],hiddenPalet: hiddenPaletInfoType) => {
     return {
       type: actionTypes.SELECT_FOLDER,
-      folder,allPalet,allVersion,allAnime
+      folder,allPalet,allVersion,allAnime,hiddenPalet
     }
 }
 
-export const selectFolderAnime = (folder: any,allPalet:paletType[],allAnime: allAnimeType[]) => {
+export const selectFolderAnime = (folder: any,allPalet:paletType[],allAnime: allAnimeType[],hiddenPalet: hiddenPaletInfoType) => {
   return {
     type: actionTypes.SELECT_FOLDER_ANIME,
-    folder,allPalet,allAnime
+    folder,allPalet,allAnime,hiddenPalet
   }
 }
 
@@ -32,15 +33,15 @@ export const setTempPalet = (palet:any[]=[]) => {``
 }
 
 export const ReadPaletsAsyncRequest =  (folder: any,anime=false) => {
-  return (dispatch:any) => {
+  return async (dispatch:any) => {
      let allPalet =  readAllPalet(folder)
      if(!anime){
       let allVersion =  readAllVersion(folder)
-      let allAnime =  readAllAnime(folder)
-      dispatch(selectFolder(folder,allPalet,allVersion,allAnime))
+      let {allAnime,hiddenPalet} =  await readAllAnime(folder)
+      dispatch(selectFolder(folder,allPalet,allVersion,allAnime,hiddenPalet))
      }else{
-      let allAnime =  readAllAnime(folder)
-       dispatch(selectFolderAnime(folder,allPalet,allAnime))
+      let {allAnime,hiddenPalet} =  await readAllAnime(folder)
+       dispatch(selectFolderAnime(folder,allPalet,allAnime,hiddenPalet))
      }
      
   }

@@ -122,10 +122,25 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
     // return false
 }
 
+export interface graphicInfo{
+    id:number,
+    ddr:number,
+    length:number,
+    x:number
+    y:number
+    width:number
+    height:number
+    east:number
+    south:number
+    flag:number
+    unKnow:number[]
+    tileId:number
+}
+
 
 //获取解析图片信息
 function getInfo(i = 0, palet: Buffer) {
-    let json = {    //Buffer.slice末尾不包含
+    let json:graphicInfo = {    //Buffer.slice末尾不包含
         id: bytes2Int(palet.subarray(0, 4)),   //图片的编号 0开始
         ddr: bytes2Int(palet.subarray(4, 8)), //指明图片在数据文件中的起始位置 0 开始
         length: bytes2Int(palet.subarray(8, 12)), //图片数据块的大小 块长度;
@@ -136,7 +151,7 @@ function getInfo(i = 0, palet: Buffer) {
         east: palet[28],  //占地东
         south: palet[29], //占地南
         flag: palet[30], //标记
-        unKnow: palet.subarray(31, 36).toJSON(), //5个字节
+        unKnow: palet.subarray(31, 36).toJSON().data, //5个字节
         tileId: bytes2Int(palet.subarray(36, 40)) //4个字节
     }
     // console.log(json)

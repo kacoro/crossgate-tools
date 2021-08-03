@@ -10,7 +10,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readAnimesInfo, getAnimeInfo, getAnime } from '../../Utils/anime'
+import { readAnimesInfo, getAnimeInfo, getAnime, hiddenPaletInfoType } from '../../Utils/anime'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList,AnimeInfoList } from '../../Utils/config'
 import { throttle, debounce } from '@kacoro/utils'
@@ -29,7 +29,8 @@ type Props = {
     palets: Buffer,
     tempPalet: Buffer,
     allVersion: versionType[],
-    allAnime: allAnimeType[]
+    allAnime: allAnimeType[],
+    hiddenPalet:hiddenPaletInfoType
 };
 
 export interface Bitmap {
@@ -38,7 +39,7 @@ export interface Bitmap {
     height: number;
 }
 export function AnimeList(props: Props) {
-    const { folder, palets, currentPalet, tempPalet, allVersion, allAnime } = props
+    const { folder, palets, currentPalet, tempPalet, allVersion, allAnime,hiddenPalet } = props
     const classes = usePanelstyles();
     const [acount, SetAccount] = useState({ key: 'acount', name: '动画总数', value: 0 })
     const [infos, SetInfos] = useState(null);
@@ -152,7 +153,7 @@ export function AnimeList(props: Props) {
                 if (tempPalet.length > 0) {
                     _palet = tempPalet
                 }
-                let data: any = await getAnime(infos, animePath.current, _palet, graphicsInfo.current, graphicPath.current)
+                let data: any = await getAnime(infos, animePath.current, _palet, graphicsInfo.current, graphicPath.current,hiddenPalet)
                 // console.log("getImage",image)
                 SetExtendInfo(data)
                 //console.log(image);
@@ -347,7 +348,7 @@ export function AnimeList(props: Props) {
     );
 }
 
-const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer, tempPalet: Buffer, allVersion: versionType[], allAnime: allAnimeType[] }) => {
+const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer, tempPalet: Buffer, allVersion: versionType[], allAnime: allAnimeType[],hiddenPalet:hiddenPaletInfoType }) => {
     return {
         folder: state.folder,
         currentPalet: state.currentPalet,
@@ -355,6 +356,7 @@ const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer
         tempPalet: state.tempPalet,
         allVersion: state.allVersion,
         allAnime: state.allAnime,
+        hiddenPalet:state.hiddenPalet
     }
 }
 

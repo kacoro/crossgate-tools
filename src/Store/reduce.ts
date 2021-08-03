@@ -2,6 +2,7 @@ import { paletType } from "../Utils/readPalets"
 import * as actionTypes from "./actionTypes"
 
 import {versionType} from "../Utils/version"
+import { hiddenPaletInfoType } from "../Utils/anime"
 
 // export type PaletsType = Buffer[Buffer[number]] | Buffer[]
 
@@ -22,6 +23,7 @@ interface initState{
   currentImage:number,
   allPalet:paletType[],
   tempPalet:PaletsType,
+  hiddenPalet:hiddenPaletInfoType,
   allVersion:versionType[],
   allAnimeInfo:Uint8Array[],
   allAnime:Uint8Array[],
@@ -37,6 +39,7 @@ const initialState:initState = {
   currentImage: 0,
   allPalet: [] ,
   tempPalet: [] , //临时存储
+  hiddenPalet:{}, //隐藏调色版
   allVersion:[],
   allAnimeInfo:[],
   allAnime:[],
@@ -51,14 +54,17 @@ const reducer = (state = initialState, action: any) => {
         folder: action.folder,
         allPalet: action.allPalet,
         allVersion:action.allVersion,
-        allAnime:action.allAnime
+        allAnime:action.allAnime,
+        hiddenPalet:action.hiddenPalet,
+        
       }
      case actionTypes.SELECT_FOLDER_ANIME:
       return {
         ...state,
         folder: action.folder,
         allPalet: action.allPalet,
-        allAnime:action.allAnime
+        allAnime:action.allAnime,
+        hiddenPalet:action.hiddenPalet
       }
 
 

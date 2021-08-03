@@ -51,7 +51,7 @@ export const getHiddenPalet = async (binPath: string, infoJson: infoType) =>{
      let { ddr, length } = infoJson
      console.log(length%3)
      console.log(binPath)
-     let paletStream = createReadStream(binPath, { start: ddr ,end: ddr + length-1})
+     let paletStream = createReadStream(binPath, { start: ddr -20,end: ddr + length-1})
     
      let paletBuffer = await readStream(paletStream)
      console.log(paletBuffer)
@@ -68,7 +68,13 @@ export const getHiddenPalet = async (binPath: string, infoJson: infoType) =>{
     //  });
      return hiddenPalet
 }
-
+//获取隐藏调色版
+export const getHiddenPaletInfo = async (binPath: string, infoJson: infoType) =>{
+    //也许所有的图片都是从V3_拿的，比如V2的也是暂时不处理
+    // let AllPalet = []
+    // const hinddenStream = createReadStream(path.join(versionPath,filename), { start: 3840*40 })
+    // return AllPalet
+}
 export interface paletType  {
     name:string
     path?:string
