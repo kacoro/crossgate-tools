@@ -164,20 +164,21 @@ export const myInfoList: infoType = {
 // 乐园之卵的动画也有很大改变，同一类型的各种宠物，以前是各自有独立的图片，现在是通过改变调色板来区别的(我认为如果能将玩家角色这样简化就好了，宠物反而不应这样)，方向也简化了，右边的三个方向是左边对称过去的，这是一种偷工减料，不过也减少了文件的体积……同时也导致了数据格式的改变。动画信息文件中的数据头结构变化：
 
 export const AnimeInfoList: infoType = {                   // 字节  说明
-    //动画地址信息 长度12字节
+    //动画地址信息 长度12字节 paletId 为隐藏调色版，从3840开始，不一定连续都存在
     'id': { name: '动画序号 ', value: 0, isShow: true },    //  4   动画序号
     'ddr': { name: '地址', value: 0, isShow: true },        //  4   动画在数据文件中的起始位置
     'length': { name: '动作数目', value: 0, isShow: true }, //  2   动作数目
-    'unknow': { name: '未知', value: 0, isShow: true },     //  2   未知
-    //Anime 动画详细信息 长度12字节
+    'unknow': { name: '未知', value: 0, isShow: false },     //  2   未知
+    //Anime 动画详细信息 长度12字节     乐园以后长度为20
     'direction': { name: '方向', value: 0, isShow: true },  //  2   0-7分别表示8个方向
     'action': { name: '动作 ', value: 0, isShow: true },    //  2   0-7分别表示8个方向
     'time': { name: '时间 ', value: 0, isShow: true },      //  2   该动作完成一遍所需时间，单位为毫秒
     'frames': { name: '帧数 ', value: 0, isShow: true },    //  4   该动画有多少帧，决定后面数据的大小
-    'pelet': { name: '调色版编号', value: 0, isShow: true }, //2   2.0以后的 不一定需要用词来判断
+    'paletId': { name: '调色版编号', value: 0, isShow: true }, //2   2.0以后的 不一定需要用词来判断
     'reverse': { name: '反向', value: 0, isShow: true },       //2   2.0以后的 若为奇数表示该序列的图片左右反向
+    
     //序列号 动画详细信息 长度10字节
-    'graphicId': { name: '图片号 ', value: 0, isShow: true },// 4    该帧所使用的图片
-    'graphicUnknow': { name: '未知 ', value: 0, isShow: true }// 4    该帧所使用的图片
+    'graphicIds': { name: '图片号 ', value: 0, isShow: false },// 4    该帧所使用的图片
+    'graphicUnknow': { name: '未知 ', value: 0, isShow: false }// 4    该帧所使用的图片
 };
 //可能由于开发时的某些原因，造成存放了3遍序列，并且按前两遍解出的动画是错误的，要以第3遍为准，第2375号角色才是第0号  经过解析文件，发现其实覆盖了4遍

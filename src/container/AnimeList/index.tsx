@@ -10,10 +10,9 @@ import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readGraphicInfo, getImageInfo, getImage } from '../../Utils/readImages'
 import { readAnimesInfo, getAnimeInfo, getAnime } from '../../Utils/anime'
 import { connect } from 'react-redux';
-import { g_ImgMap, myInfoList } from '../../Utils/config'
+import { g_ImgMap, myInfoList,AnimeInfoList } from '../../Utils/config'
 import { throttle, debounce } from '@kacoro/utils'
 import { exportCanvasAsPNG, MIME_TYPE, canvasOffScreen } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
@@ -192,10 +191,11 @@ export function AnimeList(props: Props) {
             Promise.all(imagedatas).then(function (sprites) {
                 // Draw each sprite onto the canvas
                 // console.log({ sprites })
+                // (milliseconds / (desc.v1.duration / desc.v1.frames)) % desc.v1.frames;
                 rAF.current = requestAnimationFrame(() => {
                     let timestamp = info.time / info.frames
                     let start = 0;
-                    renderCanvas(context, start, 0, sprites, timestamp, width, heigth)
+                    renderCanvas(context, start, 0, sprites, timestamp, width, heigth,true)
                 })
             });
             // let ctxs = canvasOffScreen(imagedatas)
@@ -328,10 +328,10 @@ export function AnimeList(props: Props) {
                     <Grid container spacing={1} className={classes.grid}>
                         <Grid item xs={6} className={classes.gridLeft} >{acount.name}</Grid><Grid xs={6} item className={classes.gridRight}>{acount.value}</Grid>
                     </Grid>
-                    {Object.keys(myInfoList).map((key: string) => (
+                    {Object.keys(AnimeInfoList).map((key: string) => (
 
                         <Grid container spacing={1} key={key + state.imageId} className={classes.grid}>
-                            <AnimeInfoPanel id={key} infos={myInfoList} info={infos} />
+                            {extendInfo&&<AnimeInfoPanel id={key} infos={AnimeInfoList} info={extendInfo.info} />}
                         </Grid>
 
                     ))}

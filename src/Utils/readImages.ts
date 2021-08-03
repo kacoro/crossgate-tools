@@ -36,7 +36,7 @@ export const readGraphicInfoByStream = async (binPath: string, version: any) => 
     return { graphicInfo, length, graphic }
 }
 
-const readGraphiByStream = async (binPath: string, infoJson: infoType) => {
+export const readGraphiByStream = async (binPath: string, infoJson: infoType) => {
 
     let { ddr, length } = infoJson
     let headLength = 16
@@ -86,7 +86,7 @@ interface infoType {
 }
 
 //获取单子图片数据
-export async function getImage(infoJson: infoType, graphics_path: string, palet: any) {
+export async function getImage(infoJson: infoType, graphics_path: string, palet: any,hiddenPalet?:any) {
     if (!infoJson || !graphics_path || !palet) return false
 
     const { graphic, version, localPaletInfo } = await readGraphiByStream(graphics_path, infoJson)
@@ -97,6 +97,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
         // console.time("decode")
         if (version == 3) {
             elementSize += localPaletInfo.length
+            console.log({elementSize})
         }
         // var imageData = decodeImgData(graphic.toJSON().data)
         var imgBuffer = decodeByBuferr(graphic, elementSize)
@@ -104,7 +105,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
         // console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
-            let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo)
+            let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo,hiddenPalet)
 
             return image
         } catch (error) {
@@ -114,7 +115,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
 
     } else {
         let imgData = graphic.toJSON().data
-        let image = await filleImgPixel(infoJson, imgData, palet, localPaletInfo)
+        let image = await filleImgPixel(infoJson, imgData, palet, localPaletInfo,hiddenPalet)
         return image
     }
     // console.log(image)
@@ -147,7 +148,7 @@ interface paletType {
     [key: string]: any
 }
 
-const filleImgPixel = (prop: infoType, data: any[], palet: PaletsType[], localPaletInfo: any):Promise<Bitmap> => {
+const filleImgPixel = (prop: infoType, data: any[], palet: PaletsType[], localPaletInfo: any,hiddenPalet?: PaletsType[]):Promise<Bitmap> => {
 
     const { width, height } = prop;
 
@@ -175,7 +176,9 @@ const filleImgPixel = (prop: infoType, data: any[], palet: PaletsType[], localPa
         }
     }
     var imgData: any[] = [];
-
+    if(hiddenPalet){
+        palet = hiddenPalet
+    }
     data.map((pixel: number) => {
         if (pixel == BG_COLOR) {
             imgData.push([0, 0, 0, 0])

@@ -3,14 +3,14 @@ import path from 'path';
 import Jimp from 'jimp'
 // tslint:disable-next-line: no-var-requires
 const jimp: Jimp = require('jimp')
-import { arrTrans, BG_COLOR } from "./config";
-import { PaletsType } from '../Store/reduce';
-import { decodeByBuferr } from './cgCoder'
 import { bytes2Int } from './covert';
 import { readStream } from './steam'
-import { getImage, getImageInfo, readGraphicInfo } from './readImages';
+import { getImage, getImageInfo, readGraphiByStream, readGraphicInfo } from './readImages';
 import { Bitmap } from '@container/InfoList';
-import { resolve } from 'webpack.config';
+import { getHiddenPalet } from './readPalets';
+import { PaletsType } from '../Store/reduce';
+import { decodeByBuferr } from './cgCoder';
+import { arrTrans } from './config';
 
 interface AnimeDict {
     [key: string]: string
@@ -97,7 +97,8 @@ export const readAllAnime = (binPath: string): allAnimeType[] => {
         })
         console.log({ readAllAnime, readAllVersion })
     } catch (error) {
-        alert(error.message + "，请重新选择目录！")
+        console.log("error.message :",error.message)
+        // alert(error.message + "，请重新选择目录！")
     }
 
     return readAllAnime;
@@ -135,10 +136,10 @@ interface animeInfoType {
     graphicIds?: graphicIds[],
     paletId?:number
     reverse?:number
-    unknow?:string
+    paletUnknow?:string
 } interface graphicIds {
     id: number
-    Unknow: string
+    unknow: string
     data?: Buffer
     width?: number
     height?: number
@@ -171,12 +172,12 @@ function getInfo(palet: Buffer, type = 0): animeInfoTypes {
             frames: bytes2Int(palet.subarray(8, 12)), //该动画有多少帧，决定后面数据的大小
             paletId:bytes2Int(palet.subarray(12, 14)), //调色板号 没完全弄清楚，我不用它来判断
             reverse:bytes2Int(palet.subarray(14, 16)), //若为奇数表示该序列的图片左右反向
-            unknow:palet.subarray(16, 20).toString('utf-8'), //为0xFFFFFFFF，可能是结束符，便于以后再扩充？
+            paletUnknow:palet.subarray(16, 20).toString('utf-8'), //为0xFFFFFFFF，可能是结束符，便于以后再扩充？
         }
     } else { //动作序列号
         json = {    //Buffer.slice末尾不包含
             id: bytes2Int(palet.subarray(0, 4)),      // 该帧所使用的图片
-            Unknow: palet.subarray(4, 10).toString("utf-8"), //动画在数据文件中的起始位置 0 开始
+            unknow: palet.subarray(4, 10).toString("utf-8"), //动画在数据文件中的起始位置 0 开始
         }
     }
 
@@ -240,19 +241,63 @@ interface infoType {
     [key: string]: any
 }
 
+
+
+
+
 //获取单个动画信息
 export async function getAnime(infoJson: infoType, animePath: string, palet: any, graphics: Buffer, graphicPath: string) {
     if (!infoJson || !animePath || !palet) return false
 
     // console.log({ graphics, length, graphicPath })
     const { info } = await readAnimeByStream(animePath, infoJson)
-    console.log(info)
+    
+    let hiddenPalet:any
+    if(info.paletId){//如果有隐藏的id，则查找。//GraphicInfoV3_*.bin中
+        //即使是AnimeInfo_PUK2_*.bin中的动画也是使用这里的调色板，从3840幅图片开始是隐藏调色板，不过并不是全部连续存在的，所以需要判断，除了宽4高1外
+        //，普通图片的地图编号高位为0或者3(乐园版本的地图)，调色板的则不是，可以依此辨别。 
+        
+        console.log(info)
+        let graphicInfo = getImageInfo(info.paletId+3840-1, graphics);
+        
+        console.log(graphicInfo)
+        if(graphicInfo.width==4&&graphicInfo.height==1&&graphicInfo.tileId!=0&&graphicInfo.tileId!=3){//这种才是调色版的。暂时以这个判断
+            // hiddenPalet = await getHiddenPalet(graphicPath,graphicInfo)
+            // console.log(hiddenPalet)
+            
+            const { graphic, version, localPaletInfo } = await readGraphiByStream(graphicPath, graphicInfo)
+            console.log(graphic,version,localPaletInfo)
+            let elementSize = graphicInfo.width * graphicInfo.height
+         
+            if (version == 3) {
+                elementSize += localPaletInfo.length
+                console.log({elementSize})
+            }
+
+          
+            // var imageData = decodeImgData(graphic.toJSON().data)
+            var imgBuffer = decodeByBuferr(graphic, elementSize)
+            let imageData = imgBuffer.toJSON().data
+            console.log(imageData.length - localPaletInfo.length)
+            let _palet: any
+            _palet = imageData.slice(imageData.length - localPaletInfo.length)
+            console.log(_palet)
+            _palet = arrTrans(3, _palet)
+            _palet = _palet.map((item: any[]) => {
+                return item.reverse();
+            });
+            hiddenPalet = _palet
+            console.log(_palet)
+        }   
+       
+    }
+
     //读取图片
     let images: Bitmap[] = []
     for (let index = 0; index < info.graphicIds.length; index++) {
         const id = info.graphicIds[index].id;
         let graphicInfo = getImageInfo(id, graphics);
-        let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet)
+        let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet,hiddenPalet)
         if(image){
             images.push(image)
         }

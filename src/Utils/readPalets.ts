@@ -1,8 +1,9 @@
-import fs from 'fs';
+import fs,{createReadStream} from 'fs';
 import path from 'path';
 const { dialog } = require('electron').remote;
 import { g_c0_15, g_c240_255, g_palet, arrTrans } from "./config";
 import { PaletsType } from '../Store/reduce';
+import { readStream } from './steam'
 export const readPalet = (binPath: string, index: number) => {
     let palet: any
     try {
@@ -36,12 +37,36 @@ export const readPalet = (binPath: string, index: number) => {
         //弹窗
         console.dir(error.message)
         alert(error.message+"，请重新选择目录！")
-
     }
-
-    
     return palet;
+}
 
+interface infoType {
+    [key: string]: any
+}
+
+//获取隐藏调色版
+export const getHiddenPalet = async (binPath: string, infoJson: infoType) =>{
+     //也许所有的图片都是从V3_拿的，比如V2的也是暂时不处理
+     let { ddr, length } = infoJson
+     console.log(length%3)
+     console.log(binPath)
+     let paletStream = createReadStream(binPath, { start: ddr ,end: ddr + length-1})
+    
+     let paletBuffer = await readStream(paletStream)
+     console.log(paletBuffer)
+     let palet =  paletBuffer.toJSON().data
+    
+     
+     let hiddenPalet:any = arrTrans(3,palet)
+     let m = hiddenPalet[hiddenPalet.lenght] % 3
+     for (let index = 0; index <m ; index++) {
+        palet.push(0)
+     }
+    //  hiddenPalet = hiddenPalet.map((item: any[]) => {
+    //     return item.reverse();
+    //  });
+     return hiddenPalet
 }
 
 export interface paletType  {
@@ -83,6 +108,8 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
 }
 
 
+
+
 export const SavePalet = (palet: PaletsType[]  ) =>{
     palet = palet.map((item)=>{
         return item.reverse();
@@ -98,3 +125,4 @@ export const SavePalet = (palet: PaletsType[]  ) =>{
         console.log(req)
     })
 }
+
