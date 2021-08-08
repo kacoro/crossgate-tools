@@ -13,7 +13,7 @@ const devConfig = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist')
   },
-
+  devtool:'cheap-module-eval-source-map',
   module: {
     rules: [{
         test: /\.tsx?$/,
@@ -56,6 +56,7 @@ const devConfig = {
 }
 const productionConfig = {
   mode: 'production',
+  devtool:'cheap-module-source-map',
   optimization: {
     minimize: true,
     minimizer: [

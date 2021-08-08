@@ -74,11 +74,16 @@ export const readGraphiByStream = async (binPath: string, infoJson: infoType) =>
 
 //获取单张图片信息
 export function getImageInfo(i: number, graphicInfo: Buffer) {
-
-    let buf1 = Buffer.allocUnsafe(40);
-    graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
-    var json = getInfo(i * 40, buf1);
-    return json
+    try {
+        let buf1 = Buffer.allocUnsafe(40);
+        graphicInfo.copy(buf1, 0, i * 40, (i + 1) * 40);
+        var json = getInfo(i * 40, buf1);
+        return json
+    } catch (error) {
+        console.log(error.message)
+        return null
+    }
+    
 }
 
 interface infoType {

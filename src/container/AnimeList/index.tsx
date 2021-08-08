@@ -10,7 +10,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readAnimesInfo, getAnimeInfo, getAnime, hiddenPaletInfoType } from '../../Utils/anime'
+import { readAnimesInfo, getAnimeInfo, getAnime, hiddenPaletInfoType,getframe } from '../../Utils/anime'
 import { connect } from 'react-redux';
 import { g_ImgMap, myInfoList,AnimeInfoList } from '../../Utils/config'
 import { throttle, debounce } from '@kacoro/utils'
@@ -162,17 +162,48 @@ export function AnimeList(props: Props) {
         }
     }, [infos, palets, tempPalet]);
 
+    const updateInfo = (name:string,value:number) =>{
+        SetExtendInfo((data: any)=>{
+            let info = {...data.info,[name]:value}
+            console.log(info)
+            return {...data,info}
+        })
+    }
+
+    // 获取图片数据
+    useEffect( ()=> {
+        if (animePath.current && animePath.current.length != 0 && infos) {
+
+            (async () => {
+                let _palet = palets
+                if (tempPalet.length > 0) {
+                    _palet = tempPalet
+                }
+                let {images}: any = await getframe(extendInfo.info.action,extendInfo.info.direction,extendInfo.AnimeGroup,extendInfo.hiddenPalet, _palet, graphicsInfo.current, graphicPath.current)
+                // console.log("getImage",image)
+                SetExtendInfo((data: { images: any; })=>{
+                    return {...data,images:images}
+                })
+                //console.log(image);
+
+            })();
+        }
+    }, [extendInfo?.info.action,extendInfo?.info.direction]);
+
+  
+
     //生成图片
     useEffect(() => {
         // console.log(image.width)
+        const context = canvas.current.getContext("2d");
+        const width = container.current.clientWidth
+        const heigth = container.current.clientHeight
+        cancelAnimationFrame(rAF.current);
+        context.clearRect(0, 0, width, heigth)
         console.log("images", extendInfo)
         if (extendInfo && extendInfo.images.length > 0) {
-            cancelAnimationFrame(rAF.current);
-            const context = canvas.current.getContext("2d");
-
-            const width = container.current.clientWidth
-            const heigth = container.current.clientHeight
-            context.clearRect(0, 0, width, heigth)
+            // cancelAnimationFrame(rAF.current);
+            // context.clearRect(0, 0, width, heigth)
             canvas.current.width = width
             canvas.current.height = heigth
             // context.save();
@@ -209,8 +240,10 @@ export function AnimeList(props: Props) {
             // })
 
 
+        }else{
+            
         }
-    }, [extendInfo]);
+    }, [extendInfo?.images]);
 
 
     const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number = null, i: number,
@@ -244,7 +277,7 @@ export function AnimeList(props: Props) {
             })
         }
 
-    }, [extendInfo]);
+    }, [extendInfo?.images]);
 
 
 
@@ -329,13 +362,16 @@ export function AnimeList(props: Props) {
                     <Grid container spacing={1} className={classes.grid}>
                         <Grid item xs={6} className={classes.gridLeft} >{acount.name}</Grid><Grid xs={6} item className={classes.gridRight}>{acount.value}</Grid>
                     </Grid>
-                    {Object.keys(AnimeInfoList).map((key: string) => (
+                    {extendInfo&&<AnimeInfoPanel 
+                    updateInfo={updateInfo} 
+                    extendInfo={extendInfo.info} info={infos} />}
+                    {/* {Object.keys(AnimeInfoList).map((key: string) => (
 
                         <Grid container spacing={1} key={key + state.imageId} className={classes.grid}>
-                            {extendInfo&&<AnimeInfoPanel id={key} infos={AnimeInfoList} info={extendInfo.info} />}
+                            {extendInfo&&<AnimeInfoPanel id={key} updateInfo={updateInfo} infos={AnimeInfoList} info={extendInfo.info} />}
                         </Grid>
 
-                    ))}
+                    ))} */}
                 </List>
             </div>
             <div className={classes.Container} ref={container}>

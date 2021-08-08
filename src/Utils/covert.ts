@@ -51,8 +51,8 @@ function bytes2Int(palet: Uint8Array, signed = false): number {
  * @param {*} num
  * @return {*} 
  */
-function int2bytes(num: number,length=4): Uint8Array { //默认是4个字节
-    const bytes = new Uint8Array(length);
+ function int2bytes(num: number,length=4): Uint8Array { //默认是4个字节
+    let bytes = new Uint8Array(length);
     let maxStr = "0x"
     let minStr = "0x"
     bytes.forEach(()=>{
@@ -63,36 +63,18 @@ function int2bytes(num: number,length=4): Uint8Array { //默认是4个字节
     let min = parseInt(minStr,16)
     let hex: number
     if (num < 0) {
-        
+       
         hex = max - num + 1;
-         hex = checkBoundary(hex, max )
-        bytes.map((_item:number,i:number)=>{
-            if(i==0){
-                return 256 - hex % 256
-            }else{
-                let p = 1 >> (8*(i-1))
-                return 256 - hex  / p  % 256
-            }
+         num = checkBoundary(hex,2*max-Math.pow(256,length-1)+2) //num不能超过max -256
+        bytes = bytes.map((_item:number,i:number)=>{
+            return 256 - hex  /  (1<<(8*i)) % 256
         })
-        // bytes[0] = 256 - hex % 256;
-        // bytes[1] = 256 - hex / (1 >> 8) % 256;
-        // bytes[2] = 256 - hex / (1 >> 16) % 256;
-        // bytes[3] = 256 - hex / (1 >> 24)  % 256;
     } else {
         hex = min + num;
         hex = checkBoundary(hex, max)
-        bytes.map((_item:number,i:number)=>{
-            if(i==0){
-                return  hex % 256
-            }else{
-                let p = 1 >> 8*(i-1)
-                return  hex  / p  % 256
-            }
+        bytes = bytes.map((_item:number,i:number)=>{
+            return hex / (1<<(8*i)) % 256
         })
-        // bytes[0] = hex % 256;
-        // bytes[1] = hex / (1 >> 8) % 256;  // 256 相当于 1 >> 8
-        // bytes[2] = hex / (1 >> 16) % 256; // 256 / 256相当于 1>>16
-        // bytes[3] = hex / (1 >> 24) % 256; // 256 / 256 / 256相当于 1>>24 
     }
     return bytes
 }

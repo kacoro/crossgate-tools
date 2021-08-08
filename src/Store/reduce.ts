@@ -55,8 +55,7 @@ const reducer = (state = initialState, action: any) => {
         allPalet: action.allPalet,
         allVersion:action.allVersion,
         allAnime:action.allAnime,
-        hiddenPalet:action.hiddenPalet,
-        
+        hiddenPalet:action.hiddenPalet
       }
      case actionTypes.SELECT_FOLDER_ANIME:
       return {

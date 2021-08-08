@@ -18,10 +18,10 @@ interface AnimeDict {
 }
 const versionDict: AnimeDict = {
     "3": "命运的开启者",
-    "Ex1": "龙之沙时计",
-    "V37": "乐园之卵（精灵）",
-    "V38": "乐园之卵（精灵",
-    "Ex5": "Ex5",
+    "Ex1": "龙之沙时计Ex1",
+    "V37": "乐园之卵（精灵）V37",
+    "V38": "乐园之卵（精灵) V38",
+    "Ex5": "龙之沙时计Ex5",
     "ga1": "ga1",
     "V319": "V319",
     "66": "66",
@@ -58,7 +58,7 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
         files.forEach((filename) => { // item: 目录和文件名称
             if (filename.includes(suffix)) {
                 let file = filename.replace("Info", "")
-                let name = file.replace(".Bin", "").replace(".bin", "").replace("Anime", "").replace(/_/g, "")
+                let name = file.replace(".Bin", "").replace(".bin", "").replace("Anime", "")
 
                 //找到匹配的图档
                 console.log({ name })
@@ -77,9 +77,11 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
 
         let versionSuffix = "GraphicInfo"
         files.forEach((filename) => { // 匹配对应的图档
+
             if (filename.includes(versionSuffix)) {
                 let file = filename.replace("Info", "")
-                let name = file.replace(".bin", "").replace("Graphic", "").replace(/_/g, "")
+                let name = file.replace(".bin", "").replace("Graphic", "")
+                console.log({ name })
                 //找到匹配的图档
                 readAllVersion.push({
                     name: name,
@@ -88,29 +90,38 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
                     file: file,
                     version: parseInt(name.replace(/[a-zA-Z]/g, ''))
                 })
-
             }
         })
         let hidenPaletSuffix = /^GraphicInfoV3_/ // 用正则匹配 有可能出现两次的情况
 
 
         let hiddenPaletArray: string[] = []
-       
+
         files.forEach(async (filename) => { // 匹配对应的图档
             if (hidenPaletSuffix.test(filename)) {
                 hiddenPaletArray.push(filename)
             }
         })
 
-        const hinddenStream = createReadStream(path.join(versionPath, hiddenPaletArray[0]), { start: 3840 * 40 })
-        let hiddenBuffer = await readStream(hinddenStream)
-        let length = hiddenBuffer.length / 40
-        for (let index = 0; index < length; index++) {
-            let info = getImageInfo(index, hiddenBuffer)
-            if (info && info.width == 4 && info.height == 1) {
-                hiddenPalet[info.tileId] = info
+        for (let index = 0; index < hiddenPaletArray.length; index++) {
+            const element = hiddenPaletArray[index];
+            const hinddenStream = createReadStream(path.join(versionPath, element), { start: 3840 * 40 })
+            let hiddenBuffer = await readStream(hinddenStream)
+            let length = hiddenBuffer.length / 40
+            for (let index = 0; index < length - 1; index++) {
+                try {
+                    let info = getImageInfo(index, hiddenBuffer)
+                    if (info && info.width == 4 && info.height == 1) {
+                        hiddenPalet[info.tileId] = info
+                    }
+                } catch (error) {
+                    console.log(error.message)
+                }
+
             }
         }
+
+
         console.log(hiddenPalet)
         readAllAnime.map((item, index) => {
             //后续考虑使用match
@@ -154,6 +165,11 @@ export const readAnimesInfo = async (binPath: string, version: any) => {
         console.log(error.message)
         return {}
     }
+}
+
+interface animeFrames {
+    info: animeInfoType,
+    graphicIds: graphicIds[]
 }
 
 interface animesInfoype {
@@ -224,12 +240,17 @@ interface paletType {
 
 //获取单个图动画信息
 export function getAnimeInfo(i: number, graphicInfo: Buffer) {
+    try {
+        let buf1 = Buffer.allocUnsafe(12);
+        graphicInfo.copy(buf1, 0, i * 12, (i + 1) * 12);
+        var json = getInfo(buf1);
+        console.log(json)
+        return json
+    } catch (error) {
+        console.log(error.message)
+        return null
+    }
 
-    let buf1 = Buffer.allocUnsafe(12);
-    graphicInfo.copy(buf1, 0, i * 12, (i + 1) * 12);
-    var json = getInfo(buf1);
-    console.log(json)
-    return json
 }
 
 const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
@@ -239,35 +260,54 @@ const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
     //正向匹配
     let checkV3 = binPath.includes('V3') || binPath.includes('Joy')
     console.log({ checkV3 })
-
+    let action = 19
     let headLength = 12
     if (checkV3) {
         headLength = 20
     }
-    let headSteam = createReadStream(binPath, { start: ddr, end: ddr + headLength - 1 })
+    let offset = 0
+    let AnimeGroup = []
+    let paletId = null
+    let count = 0
+    while (length > 0) {//一次性解出所有图片
+        let headSteam = createReadStream(binPath, { start: ddr + offset, end: ddr + offset + headLength - 1 })
 
-    // 后面就跟有多少个序列号，每个序列号长10字节。
-    let head = await readStream(headSteam)
-    let headInfo = getInfo(head, 1) as animeInfoType
-    if (checkV3) {
-        headInfo = getInfo(head, 3) as animeInfoType
-    }
-    let graphicIds = []
-    let graphicHeadLength = 10
-    for (let index = 0; index < headInfo.frames; index++) {
-        let graphicStream = createReadStream(binPath, {
-            start: ddr + headLength + index * graphicHeadLength,
-            end: ddr + headLength + (index + 1) * graphicHeadLength - 1
-        })
-        let graphicHead = await readStream(graphicStream)
-        let graphicHeadInfo = getInfo(graphicHead, 2) as graphicIds
-        graphicIds.push(graphicHeadInfo)
-    }
+        // 后面就跟有多少个序列号，每个序列号长10字节。
+        let head = await readStream(headSteam)
 
+        let headInfo = getInfo(head, 1) as animeInfoType
+
+        if (checkV3) {
+            headInfo = getInfo(head, 3) as animeInfoType
+        }
+
+        //帧数，决定后面数据的大小
+        let graphicIds = []
+        let graphicHeadLength = 10
+        for (let index = 0; index < headInfo.frames; index++) {
+            let graphicStream = createReadStream(binPath, {
+                start: ddr + offset + headLength + index * graphicHeadLength,
+                end: ddr + offset + headLength + (index + 1) * graphicHeadLength - 1
+            })
+            let graphicHead = await readStream(graphicStream)
+            let graphicHeadInfo = getInfo(graphicHead, 2) as graphicIds
+            graphicIds.push(graphicHeadInfo)
+        }
+        count += headInfo.frames
+        let frames = {
+            info: headInfo,
+            graphicIds
+        }
+        AnimeGroup.push(frames)
+        offset += headInfo.frames * graphicHeadLength + headLength
+        length--
+    }
     // animeInfo = await readStream(graphicStream)
     // graphicStream.destroy();
-    let info: animeInfoTypes = Object.assign(infoJson, headInfo, { graphicIds })
-    return { info }
+    // let info: animeInfoTypes = Object.assign(infoJson, headInfo)
+    console.log(AnimeGroup)
+    console.log({ count })
+    return { AnimeGroup }
 }
 
 
@@ -280,13 +320,15 @@ interface infoType {
 
 
 //获取单个动画信息
-export async function getAnime(infoJson: infoType, animePath: string, 
-    palet: any, graphics: Buffer, graphicPath: string,hiddenPalets:hiddenPaletInfoType) {
+export async function getAnime(infoJson: infoType, animePath: string,
+    palet: any, graphics: Buffer, graphicPath: string, hiddenPalets: hiddenPaletInfoType) {
     if (!infoJson || !animePath || !palet) return false
 
     // console.log({ graphics, length, graphicPath })
-    const { info } = await readAnimeByStream(animePath, infoJson)
+    const { AnimeGroup } = await readAnimeByStream(animePath, infoJson)
     //使用动画编号来查
+    let frame = AnimeGroup[0]
+    let info = frame.info
 
     let hiddenPalet: any
     if (info.paletId) {//如果有隐藏的id，则查找。//GraphicInfoV3_*.bin中
@@ -294,16 +336,14 @@ export async function getAnime(infoJson: infoType, animePath: string,
         //，普通图片的地图编号高位为0或者3(乐园版本的地图)，调色板的则不是，可以依此辨别。 
 
         // console.log(hiddenPalets,info.paletId)
-      
-        let graphicInfo = hiddenPalets[(info as any).id]
-
+        let graphicInfo = hiddenPalets[infoJson.id]
         // console.log(graphicInfo)
-        if(graphicInfo&&graphicInfo.width==4&&graphicInfo.height==1&&graphicInfo.tileId!=0){//这种才是调色版的。暂时以这个判断
-             hiddenPalet = await getHiddenPalet(graphicPath,graphicInfo)
-            // console.log(hiddenPalet)
+        if (graphicInfo && graphicInfo.width == 4 && graphicInfo.height == 1 && graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
+            hiddenPalet = await getHiddenPalet(graphicPath, graphicInfo)
+            //  console.log(hiddenPalet)
 
             const { graphic, version, localPaletInfo } = await readGraphiByStream(graphicPath, graphicInfo)
-            if(version == 1 || version == 3) {
+            if (version == 1 || version == 3) {
                 let elementSize = graphicInfo.width * graphicInfo.height
 
                 if (version == 3) {
@@ -313,14 +353,14 @@ export async function getAnime(infoJson: infoType, animePath: string,
 
                     let _palet: any
                     _palet = imageData.slice(imageData.length - localPaletInfo.length)
-                    console.log(_palet)
+                    // console.log(_palet)
                     _palet = arrTrans(3, _palet)
                     _palet = _palet.map((item: any[]) => {
                         return item.reverse();
                     });
                     hiddenPalet = _palet
                     console.log(_palet)
-                }else{
+                } else {
                     console.log("ortherVersion")
                 }
             }
@@ -328,21 +368,51 @@ export async function getAnime(infoJson: infoType, animePath: string,
                 let hiddenPalet = graphic.toJSON().data
                 return hiddenPalet
             }
-        }   
+        }
 
     }
 
     //读取图片
     let images: Bitmap[] = []
-    for (let index = 0; index < info.graphicIds.length; index++) {
-        const id = info.graphicIds[index].id;
+    for (let index = 0; index < frame.graphicIds.length; index++) {
+        const id = frame.graphicIds[index].id;
         let graphicInfo = getImageInfo(id, graphics);
         let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
         if (image) {
             images.push(image)
         }
-
     }
 
-    return { info, images }
+    return { info, images, AnimeGroup, hiddenPalet }
 }
+
+const getframe = async (action: number, direction: number, AnimeGroup: animeFrames[], hiddenPalet: number[][],
+    palet: any, graphics: Buffer, graphicPath: string) => {
+
+
+    // let frame: animeFrames = AnimeGroup[index]
+    try {
+        let frame = AnimeGroup.find(item => item.info.action == action && item.info.direction == direction);
+        console.log({ AnimeGroup })
+        console.log({ frame })
+        console.log(frame.info.direction)
+        console.log(frame.info.action)
+        let images: Bitmap[] = []
+        for (let index = 0; index < frame.graphicIds.length; index++) {
+            const id = frame.graphicIds[index].id;
+            let graphicInfo = getImageInfo(id, graphics);
+            let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
+            if (image) {
+                images.push(image)
+            }
+        }
+
+        return { images }
+    } catch (error) {
+        return { images:false}
+    }
+
+}
+
+
+export { getframe }
