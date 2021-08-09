@@ -33,7 +33,7 @@ export const usePanelstyles = makeStyles((theme: Theme) =>
             alignItems:"center"
         },
         canvas:{
-            
+            background:"#fff"
         },
         demo: {
             backgroundColor: theme.palette.background.paper,

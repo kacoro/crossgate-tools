@@ -46,7 +46,7 @@ export interface versionType {
                 //  console.log(filename)
                  let file = filename.replace("Info","")
                  let name = file.replace(".bin","").replace("Graphic","").replace(/_/g,"")
-                 console.log(name)
+                //  console.log(name)
                 //  console.log(name)
                  readAllVersion.push({
                      name:versionDict[name]||name,

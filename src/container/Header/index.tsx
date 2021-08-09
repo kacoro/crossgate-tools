@@ -78,6 +78,12 @@ export function ProminentAppBar(props: Props) {
       //可以先读取所有调色板信息。并且缓存起来。使用redux
       selectFolder(state.folder);
     }
+    if (state.palet !== '') {
+      console.log("select palet")
+      localStorage.setItem('palet', state.palet.toString());
+      console.log(state.palet)
+      selectPalet(state.palet)
+    }
 
   }, [state.folder]);
 
@@ -85,9 +91,8 @@ export function ProminentAppBar(props: Props) {
     if (state.palet !== '') {
       console.log("select palet")
       localStorage.setItem('palet', state.palet.toString());
-
+      console.log(state.palet)
       selectPalet(state.palet)
-
     }
   }, [state.palet])
 

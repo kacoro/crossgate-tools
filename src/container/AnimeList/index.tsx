@@ -10,9 +10,9 @@ import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
 import Remove from '@material-ui/icons/Remove';
 import Add from '@material-ui/icons/Add';
-import { readAnimesInfo, getAnimeInfo, getAnime, hiddenPaletInfoType,getframe } from '../../Utils/anime'
+import { readAnimesInfo, getAnimeInfo, getAnime, hiddenPaletInfoType, getframe } from '../../Utils/anime'
 import { connect } from 'react-redux';
-import { g_ImgMap, myInfoList,AnimeInfoList } from '../../Utils/config'
+import { g_ImgMap, myInfoList, AnimeInfoList } from '../../Utils/config'
 import { throttle, debounce } from '@kacoro/utils'
 import { exportCanvasAsPNG, MIME_TYPE, canvasOffScreen } from "../../Utils/canvas"
 import { Card, Checkbox, FormControlLabel } from '@material-ui/core';
@@ -21,6 +21,7 @@ import { versionType } from 'src/Utils/version';
 import { AnimeInfoPanel, infoType } from '../../Component/AnimeInfoPanel';
 import { usePanelstyles } from '../../Component/usePanelstyles';
 import { allAnimeType } from 'src/Utils/anime';
+import { graphicInfo } from '../../Utils/readImages';
 
 
 type Props = {
@@ -30,7 +31,7 @@ type Props = {
     tempPalet: Buffer,
     allVersion: versionType[],
     allAnime: allAnimeType[],
-    hiddenPalet:hiddenPaletInfoType
+    hiddenPalet: hiddenPaletInfoType
 };
 
 export interface Bitmap {
@@ -39,7 +40,7 @@ export interface Bitmap {
     height: number;
 }
 export function AnimeList(props: Props) {
-    const { folder, palets, currentPalet, tempPalet, allVersion, allAnime,hiddenPalet } = props
+    const { folder, palets, currentPalet, tempPalet, allVersion, allAnime, hiddenPalet } = props
     const classes = usePanelstyles();
     const [acount, SetAccount] = useState({ key: 'acount', name: '动画总数', value: 0 })
     const [infos, SetInfos] = useState(null);
@@ -59,7 +60,6 @@ export function AnimeList(props: Props) {
         imageId: 0,
     });
     const [loading, setLoading] = useState(false)
-    const [loadingImg, setLoadingImg] = useState(false)
     const [dbValue, saveToDb] = useState(0);
 
     const myPalet = useMemo(() => {
@@ -75,7 +75,7 @@ export function AnimeList(props: Props) {
         });
         saveToDb(nextValue)
 
-    }, 1000 / 24), []); // will be created only once initially
+    }, 50 ), []); // will be created only once initially 1000 / 24
 
 
     const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
@@ -135,17 +135,23 @@ export function AnimeList(props: Props) {
         }
 
     }, [state.version]);
-    //获取图片信息
-    useEffect(function checkGraphicID() {
+    //获取动画信息
+    useEffect(function () {
         if (animesInfo.current && animesInfo.current.length != 0) {
             // console.log("info")
-            let info: infoType = getAnimeInfo(dbValue, animesInfo.current);
-            SetInfos(info)
+            (async () => {
+                getAnimeInfo({cancel:true}) 
+                let info = await getAnimeInfo({index:dbValue, animesInfo:animesInfo.current})
+                SetInfos(info)
+                
+                
+            })()
+            
         }
     }, [dbValue, animesInfo.current])
 
     // 获取图片数据
-    useEffect(function checkGraphicInfo() {
+    useEffect(function () {
         if (animePath.current && animePath.current.length != 0 && infos) {
 
             (async () => {
@@ -153,8 +159,9 @@ export function AnimeList(props: Props) {
                 if (tempPalet.length > 0) {
                     _palet = tempPalet
                 }
-                let data: any = await getAnime(infos, animePath.current, _palet, graphicsInfo.current, graphicPath.current,hiddenPalet)
+                let data: any = await getAnime(infos, animePath.current, _palet, graphicsInfo.current, graphicPath.current, hiddenPalet)
                 // console.log("getImage",image)
+                // console.log(data)
                 SetExtendInfo(data)
                 //console.log(image);
 
@@ -162,16 +169,15 @@ export function AnimeList(props: Props) {
         }
     }, [infos, palets, tempPalet]);
 
-    const updateInfo = (name:string,value:number) =>{
-        SetExtendInfo((data: any)=>{
-            let info = {...data.info,[name]:value}
-            console.log(info)
-            return {...data,info}
+    const updateInfo = (name: string, value: number) => {
+        SetExtendInfo((data: any) => {
+            let info = { ...data.info, [name]: value }
+            return { ...data, info }
         })
     }
 
     // 获取图片数据
-    useEffect( ()=> {
+    useEffect(() => {
         if (animePath.current && animePath.current.length != 0 && infos) {
 
             (async () => {
@@ -179,39 +185,46 @@ export function AnimeList(props: Props) {
                 if (tempPalet.length > 0) {
                     _palet = tempPalet
                 }
-                let {images}: any = await getframe(extendInfo.info.action,extendInfo.info.direction,extendInfo.AnimeGroup,extendInfo.hiddenPalet, _palet, graphicsInfo.current, graphicPath.current)
+                let { images, graphicInfos, gifInfo ,time,frames,reverse}: any = await getframe(extendInfo.info.action, extendInfo.info.direction, extendInfo.AnimeGroup, extendInfo.hiddenPalet, _palet, graphicsInfo.current, graphicPath.current)
                 // console.log("getImage",image)
-                SetExtendInfo((data: { images: any; })=>{
-                    return {...data,images:images}
+                SetExtendInfo((data: { images: any; info:any}) => {
+                    let info = { ...data.info, time,frames ,reverse}
+                    return { ...data, images: images, graphicInfos, gifInfo,info }
                 })
                 //console.log(image);
 
             })();
         }
-    }, [extendInfo?.info.action,extendInfo?.info.direction]);
+    }, [extendInfo?.info?.action, extendInfo?.info?.direction]);
 
-  
+
 
     //生成图片
     useEffect(() => {
-        // console.log(image.width)
-        const context = canvas.current.getContext("2d");
-        const width = container.current.clientWidth
-        const heigth = container.current.clientHeight
-        cancelAnimationFrame(rAF.current);
-        context.clearRect(0, 0, width, heigth)
-        console.log("images", extendInfo)
-        if (extendInfo && extendInfo.images.length > 0) {
+      
+        console.log("images", extendInfo?.info?.reverse)
+        if (extendInfo && extendInfo.images && extendInfo.images.length > 0) {
+            const context = canvas.current.getContext("2d");
+            const width =  container.current.clientWidth
+            const height = container.current.clientHeight
+            // console.log(extendInfo.gifInfo)
+            cancelAnimationFrame(rAF.current);
+            // context.clearRect(0, 0, width, height)
             // cancelAnimationFrame(rAF.current);
             // context.clearRect(0, 0, width, heigth)
             canvas.current.width = width
-            canvas.current.height = heigth
+            canvas.current.height = height
+            if(extendInfo?.info?.reverse==5){
+                console.log(extendInfo.info.reserve)
+                context.translate(canvas.current.width, 0);
+                context.scale(-1, 1); //左右镜像翻转
+            }
             // context.save();
             // console.dir(container.current.clientWidth)
             let i = 0
             let info = extendInfo.info
             let images = extendInfo.images
-            let imagedatas:[Promise<ImageBitmap>] = images.map((item: any) => {
+            let imagedatas: [Promise<ImageBitmap>] = images.map((item: any) => {
                 let imageData = new ImageData(
                     Uint8ClampedArray.from(item.data),
                     item.width,
@@ -225,29 +238,43 @@ export function AnimeList(props: Props) {
                 // console.log({ sprites })
                 // (milliseconds / (desc.v1.duration / desc.v1.frames)) % desc.v1.frames;
                 rAF.current = requestAnimationFrame(() => {
+                    // (milliseconds / (desc.v1.duration / desc.v1.frames)) % desc.v1.frames
                     let timestamp = info.time / info.frames
                     let start = 0;
-                    renderCanvas(context, start, 0, sprites, timestamp, width, heigth,true)
+                    renderCanvas(context, start, 0, extendInfo.graphicInfos, sprites, timestamp, width, height,3)
                 })
             });
-            // let ctxs = canvasOffScreen(imagedatas)
-            // console.log(imagedatas)
 
-            // rAF.current = requestAnimationFrame(() => {
-            //     let timestamp = info.time / info.frames
-            //     let start = 0;
-            //     renderCanvas(context, start, 0, imagedatas, timestamp, width, heigth)
-            // })
+        } else {
 
-
-        }else{
-            
         }
     }, [extendInfo?.images]);
 
 
+    const getOffset = (_graphicInfo: graphicInfo, width: number, height: number) => {
+        let offset = {
+            x: 0, y: 0
+        }
+        let tilewidth = 64
+        let tileheight = 47
+        var θ = tileheight / tilewidth
+
+        // offset.x = (_graphicInfo.x + width/2) / 64*47
+        // offset.y = (_graphicInfo.y + height  -13)
+        let center = {
+            x: (canvas.current.width) / 2,
+            y: (canvas.current.height) / 2
+        }
+        // console.log("center:", center, _graphicInfo)
+        offset.x = center.x + _graphicInfo.x
+        offset.y = center.y + _graphicInfo.y
+        // console.log("offset:", offset)
+        return offset
+    }
+
     const renderCanvas = useCallback((context: CanvasRenderingContext2D, start: number = null, i: number,
-        sprites:ImageBitmap[], timestamp: number, width: number, heigth: number, repeat = false,scale= 1) => {
+        graphicInfos: graphicInfo[], sprites: ImageBitmap[], timestamp: number, width: number, height: number,
+        repeat = false, scale = 1) => {
         if (!start) {
             start = Date.now()
             // console.time("start")
@@ -258,22 +285,37 @@ export function AnimeList(props: Props) {
 
         //默认从第一帧开始
         if (durTime >= timestamp || i == 0) {
-           
+
             let index = i % sprites.length
+            // console.log(graphicInfos[index].x)
+            let offset = getOffset(graphicInfos[index], width, height)
             let image = sprites[index]
-            context.clearRect(0, 0, width, heigth)
-            context.drawImage(image, 0, 0, image.width, image.height,(width - image.width) / 2, (heigth - image.height) / 2,image.width*scale,image.height*scale)
+            context.clearRect(0, 0, container.current.clientWidth, container.current.clientHeight)
+            // if(extendInfo?.info?.reverse==5){
+            //     console.log(extendInfo?.info?.reverse)
+            //     context.translate(canvas.current.width/2, 0);
+            //     context.scale(-1, 1); //左右镜像翻转
+            // }
+            context.drawImage(image, offset.x, offset.y,// 2+ offset.y,
+                // image.width,
+                // image.height,
+            )
             // context.putImageData(image, (width - image.width) / 2, (heigth - image.height) / 2);
             // console.log({ start,i })
             // console.timeEnd("start")
             i++
             start = null
-            
+                if(repeat&&typeof repeat == 'number'&&(index==sprites.length-1)){
+                    // console.log({repeat})
+                    repeat--
+                }
         }
 
+        
         if (repeat || i < sprites.length) {
+            
             rAF.current = requestAnimationFrame(() => {
-                renderCanvas(context, start, i, sprites, timestamp, width, heigth, repeat)
+                renderCanvas(context, start, i, graphicInfos, sprites, timestamp, width, height, repeat)
             })
         }
 
@@ -362,20 +404,13 @@ export function AnimeList(props: Props) {
                     <Grid container spacing={1} className={classes.grid}>
                         <Grid item xs={6} className={classes.gridLeft} >{acount.name}</Grid><Grid xs={6} item className={classes.gridRight}>{acount.value}</Grid>
                     </Grid>
-                    {extendInfo&&<AnimeInfoPanel 
-                    updateInfo={updateInfo} 
-                    extendInfo={extendInfo.info} info={infos} />}
-                    {/* {Object.keys(AnimeInfoList).map((key: string) => (
-
-                        <Grid container spacing={1} key={key + state.imageId} className={classes.grid}>
-                            {extendInfo&&<AnimeInfoPanel id={key} updateInfo={updateInfo} infos={AnimeInfoList} info={extendInfo.info} />}
-                        </Grid>
-
-                    ))} */}
+                    {extendInfo && <AnimeInfoPanel
+                        updateInfo={updateInfo}
+                        extendInfo={extendInfo.info} info={infos} />}
                 </List>
             </div>
             <div className={classes.Container} ref={container}>
-                <canvas ref={canvas}  ></canvas>
+                <canvas ref={canvas} className={classes.canvas} ></canvas>
             </div>
             <div className={classes.rightSide}>
                 <PaletEditor />
@@ -384,7 +419,7 @@ export function AnimeList(props: Props) {
     );
 }
 
-const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer, tempPalet: Buffer, allVersion: versionType[], allAnime: allAnimeType[],hiddenPalet:hiddenPaletInfoType }) => {
+const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer, tempPalet: Buffer, allVersion: versionType[], allAnime: allAnimeType[], hiddenPalet: hiddenPaletInfoType }) => {
     return {
         folder: state.folder,
         currentPalet: state.currentPalet,
@@ -392,7 +427,7 @@ const mapStateToProps = (state: { folder: any; currentPalet: any, palets: Buffer
         tempPalet: state.tempPalet,
         allVersion: state.allVersion,
         allAnime: state.allAnime,
-        hiddenPalet:state.hiddenPalet
+        hiddenPalet: state.hiddenPalet
     }
 }
 

@@ -47,27 +47,42 @@ const initialState:initState = {
 }
 
 const reducer = (state = initialState, action: any) => {
+  let current = state.currentPalet!==""? parseInt(state.currentPalet):0
+  
+  console.log(current)
   switch (action.type) {
     case actionTypes.SELECT_FOLDER:
+      console.log({action})
+      console.log(state)
+      console.log("this")
+      
       return {
         ...state,
         folder: action.folder,
         allPalet: action.allPalet,
+        palets: action.allPalet[current].data,
         allVersion:action.allVersion,
         allAnime:action.allAnime,
-        hiddenPalet:action.hiddenPalet
+        hiddenPalet:action.hiddenPalet,
+        
       }
      case actionTypes.SELECT_FOLDER_ANIME:
+       console.log("this")
+      console.log({action})
+      console.log(state)
+     
       return {
         ...state,
         folder: action.folder,
         allPalet: action.allPalet,
         allAnime:action.allAnime,
+        palets: action.allPalet[current],
         hiddenPalet:action.hiddenPalet
       }
 
 
     case actionTypes.SELECT_PALET:
+      console.log({action},state.allPalet)
       return {
         ...state,
         currentPalet: action.palet,

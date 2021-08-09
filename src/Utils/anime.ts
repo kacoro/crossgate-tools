@@ -51,17 +51,17 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
     let suffix = "AnimeInfo";
     let versionPath = path.join(binPath, "bin")
     let hiddenPalet: hiddenPaletInfoType = {}
-    console.log("readAllAnime", binPath)
+    // console.log("readAllAnime", binPath)
     try {
         let files = fs.readdirSync(versionPath)// 读取目录
-        console.log(files)
+        // console.log(files)
         files.forEach((filename) => { // item: 目录和文件名称
             if (filename.includes(suffix)) {
                 let file = filename.replace("Info", "")
                 let name = file.replace(".Bin", "").replace(".bin", "").replace("Anime", "")
 
                 //找到匹配的图档
-                console.log({ name })
+                // console.log({ name })
                 readAllAnime.push({
                     name: versionDict[name] || name,
                     realName: name,
@@ -81,7 +81,7 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
             if (filename.includes(versionSuffix)) {
                 let file = filename.replace("Info", "")
                 let name = file.replace(".bin", "").replace("Graphic", "")
-                console.log({ name })
+                // console.log({ name })
                 //找到匹配的图档
                 readAllVersion.push({
                     name: name,
@@ -92,7 +92,7 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
                 })
             }
         })
-        let hidenPaletSuffix = /^GraphicInfoV3_/ // 用正则匹配 有可能出现两次的情况
+        let hidenPaletSuffix = /^GraphicInfo/ // 用正则匹配 有可能出现两次的情况
 
 
         let hiddenPaletArray: string[] = []
@@ -113,6 +113,9 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
                     let info = getImageInfo(index, hiddenBuffer)
                     if (info && info.width == 4 && info.height == 1) {
                         hiddenPalet[info.tileId] = info
+                    }else if(info.tileId!=0&&info.tileId!=3){
+                        hiddenPalet[info.tileId] = info
+                        //地图编号高位为0或者3(乐园版本的地图)
                     }
                 } catch (error) {
                     console.log(error.message)
@@ -122,7 +125,7 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
         }
 
 
-        console.log(hiddenPalet)
+        // console.log(hiddenPalet)
         readAllAnime.map((item, index) => {
             //后续考虑使用match
             if (item.name == "Joy91") {
@@ -239,18 +242,37 @@ interface paletType {
 }
 
 //获取单个图动画信息
-export function getAnimeInfo(i: number, graphicInfo: Buffer) {
+export const  getAnimeInfo1 = async (i: number, graphicInfo: Buffer) =>{
     try {
         let buf1 = Buffer.allocUnsafe(12);
         graphicInfo.copy(buf1, 0, i * 12, (i + 1) * 12);
         var json = getInfo(buf1);
-        console.log(json)
         return json
     } catch (error) {
         console.log(error.message)
         return null
     }
-
+}
+interface getAnimeInfoType{
+    index?: number, animesInfo?: Buffer,
+    cancel?:boolean
+}
+export const  getAnimeInfo = async (props:getAnimeInfoType) =>{
+    const {index,animesInfo,cancel} = props
+    if(cancel)  return new Promise(() => {})
+    return new Promise((res,rej)=>{
+        try {
+            let buf1 = Buffer.allocUnsafe(12);
+            animesInfo.copy(buf1, 0, index * 12, (index + 1) * 12);
+            var json = getInfo(buf1);
+            console.log(json)
+            res(json)
+        } catch (error) {
+            console.log(error.message)
+            rej(null)
+        }
+    })
+    
 }
 
 const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
@@ -291,6 +313,8 @@ const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
             })
             let graphicHead = await readStream(graphicStream)
             let graphicHeadInfo = getInfo(graphicHead, 2) as graphicIds
+        
+           
             graphicIds.push(graphicHeadInfo)
         }
         count += headInfo.frames
@@ -305,7 +329,7 @@ const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
     // animeInfo = await readStream(graphicStream)
     // graphicStream.destroy();
     // let info: animeInfoTypes = Object.assign(infoJson, headInfo)
-    console.log(AnimeGroup)
+    // console.log(AnimeGroup)
     console.log({ count })
     return { AnimeGroup }
 }
@@ -315,10 +339,6 @@ interface infoType {
     [key: string]: any
 }
 
-
-
-
-
 //获取单个动画信息
 export async function getAnime(infoJson: infoType, animePath: string,
     palet: any, graphics: Buffer, graphicPath: string, hiddenPalets: hiddenPaletInfoType) {
@@ -327,9 +347,12 @@ export async function getAnime(infoJson: infoType, animePath: string,
     // console.log({ graphics, length, graphicPath })
     const { AnimeGroup } = await readAnimeByStream(animePath, infoJson)
     //使用动画编号来查
-    let frame = AnimeGroup[0]
-    let info = frame.info
-
+    let info = AnimeGroup[0].info
+    
+    let frame = AnimeGroup.find(item => item.info.action == 0 && item.info.direction == 0);
+    if(frame){
+         info = frame.info
+    }
     let hiddenPalet: any
     if (info.paletId) {//如果有隐藏的id，则查找。//GraphicInfoV3_*.bin中
         //即使是AnimeInfo_PUK2_*.bin中的动画也是使用这里的调色板，从3840幅图片开始是隐藏调色板，不过并不是全部连续存在的，所以需要判断，除了宽4高1外
@@ -337,11 +360,11 @@ export async function getAnime(infoJson: infoType, animePath: string,
 
         // console.log(hiddenPalets,info.paletId)
         let graphicInfo = hiddenPalets[infoJson.id]
-        // console.log(graphicInfo)
-        if (graphicInfo && graphicInfo.width == 4 && graphicInfo.height == 1 && graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
+      
+        // if (graphicInfo && graphicInfo.width == 4 && graphicInfo.height == 1 && graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
+        if (graphicInfo &&  graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
             hiddenPalet = await getHiddenPalet(graphicPath, graphicInfo)
-            //  console.log(hiddenPalet)
-
+            
             const { graphic, version, localPaletInfo } = await readGraphiByStream(graphicPath, graphicInfo)
             if (version == 1 || version == 3) {
                 let elementSize = graphicInfo.width * graphicInfo.height
@@ -359,59 +382,111 @@ export async function getAnime(infoJson: infoType, animePath: string,
                         return item.reverse();
                     });
                     hiddenPalet = _palet
-                    console.log(_palet)
+                    // console.log(_palet)
                 } else {
                     console.log("ortherVersion")
                 }
             }
             else {
-                let hiddenPalet = graphic.toJSON().data
+                 hiddenPalet = graphic.toJSON().data
                 return hiddenPalet
             }
         }
-
     }
 
-    //读取图片
-    let images: Bitmap[] = []
-    for (let index = 0; index < frame.graphicIds.length; index++) {
-        const id = frame.graphicIds[index].id;
-        let graphicInfo = getImageInfo(id, graphics);
-        let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
-        if (image) {
-            images.push(image)
-        }
-    }
 
-    return { info, images, AnimeGroup, hiddenPalet }
+    const {images,graphicInfos,gifInfo} = await getframe(info.action,info.direction,AnimeGroup,hiddenPalet, palet, graphics, graphicPath)
+    return { info, images, AnimeGroup, hiddenPalet ,graphicInfos,gifInfo}
 }
 
 const getframe = async (action: number, direction: number, AnimeGroup: animeFrames[], hiddenPalet: number[][],
     palet: any, graphics: Buffer, graphicPath: string) => {
-
-
     // let frame: animeFrames = AnimeGroup[index]
+    let width =0
+    let height =0
+    let x = 0
+    let y = 0
+    let time = 0
+    let frames = 0
+    let reverse = 0
     try {
         let frame = AnimeGroup.find(item => item.info.action == action && item.info.direction == direction);
-        console.log({ AnimeGroup })
-        console.log({ frame })
-        console.log(frame.info.direction)
-        console.log(frame.info.action)
+        // console.log(frame)
+        time = frame.info.time
+        frames = frame.info.frames
+        reverse = frame.info.reverse
         let images: Bitmap[] = []
+        let graphicInfos = []
         for (let index = 0; index < frame.graphicIds.length; index++) {
             const id = frame.graphicIds[index].id;
             let graphicInfo = getImageInfo(id, graphics);
+            graphicInfos.push(graphicInfo)
+            console.log(graphicInfo)
+            let _x = Math.abs(graphicInfo.x)
+            let _y = Math.abs(graphicInfo.y)
+            x= Math.max(_x,x)
+            x= Math.max(_x,x)
+
+            width = Math.max(width,graphicInfo.width)
+            height = Math.max(height,graphicInfo.height)
             let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
             if (image) {
                 images.push(image)
             }
         }
 
-        return { images }
+        let gifInfo = {
+            x,
+            y,
+            width,
+            height
+        }
+        console.log(graphicInfos)
+        return { images,graphicInfos ,gifInfo,time,frames,reverse}
     } catch (error) {
-        return { images:false}
+        return { images:null,graphicInfos:null,gifInfo:null,time,frames,reverse}
     }
+}
 
+export interface RealGifType {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    id?: number,
+    ddr?: number,
+    length?: number,
+    east?: number,
+    south?: number,
+    flag?: number,
+    unKnow?: number[],
+    tileId?: number,
+    frames?: RealGifType[]
+}
+export const getRealGifInfo = (data: RealGifType[]) => {
+    let info = data.reduce((prev: RealGifType, cur: RealGifType) => {
+        let height = prev.height > cur.height ? prev.height : cur.height
+        let width = prev.width > cur.width ? prev.width : cur.width
+        let y = Math.abs(prev.y) > Math.abs(cur.y) ? Math.abs(prev.y) : Math.abs(cur.y)
+        let x = Math.abs(prev.x) > Math.abs(cur.x) ? Math.abs(prev.x) : Math.abs(cur.x)
+        if (prev.height > cur.height && Math.abs(prev.y) < Math.abs(cur.y)) {
+            height = height + Math.abs(cur.y) - Math.abs(prev.y)
+        }
+        if (prev.width > cur.width && Math.abs(prev.x) < Math.abs(cur.x)) {
+            width = width + Math.abs(cur.x) - Math.abs(prev.x)
+        }
+        let data: RealGifType = { height, y, width, x }
+        // let maxItem = prev.height + Math.abs(prev.y) > cur.height + Math.abs(cur.y) ?prev:cur
+        return data
+    })
+
+    let frames = data.map(item => {
+        item.x += info.x
+        item.y += info.y
+        return item
+    })
+    info.frames = frames
+    return info
 }
 
 

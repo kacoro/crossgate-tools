@@ -95,6 +95,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
     if (!infoJson || !graphics_path || !palet) return false
 
     const { graphic, version, localPaletInfo } = await readGraphiByStream(graphics_path, infoJson)
+    // console.log(version,localPaletInfo)
     if (version == 1 || version == 3) {// 偶数表示未压缩，按位图存放；奇数则表示压缩过
         let elementSize = infoJson.width * infoJson.height
         // console.log(data.length,infoJson.length - headLength,elementSize)
@@ -211,7 +212,6 @@ const filleImgPixel = (prop: infoType, data: any[], palet: PaletsType[], localPa
                 //调色板上没有这个颜色时
                 imgData.push([255, 255, 255, 255])
             }
-
         }
     })
     // console.log("finish")

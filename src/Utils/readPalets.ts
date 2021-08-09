@@ -12,7 +12,7 @@ export const readPalet = (binPath: string, index: number) => {
         palet = palet.slice(0, palet.length - 12 * 3).toJSON().data
         
         palet = [...g_c0_15, ...palet, ...g_c240_255]
-        console.log(palet.length)
+        // console.log(palet.length)
         palet = arrTrans(3, palet)
         palet = palet.map((item:any | any[])=>{
             return item.reverse();
@@ -32,7 +32,7 @@ export const readPalet = (binPath: string, index: number) => {
         // });
         // palet = [...palet0_15, ...palet, ...palet240_255]
       
-         console.log(palet)
+        //  console.log(palet)
     } catch (error) {
         //弹窗
         console.dir(error.message)
@@ -49,12 +49,12 @@ interface infoType {
 export const getHiddenPalet = async (binPath: string, infoJson: infoType) =>{
      //也许所有的图片都是从V3_拿的，比如V2的也是暂时不处理
      let { ddr, length } = infoJson
-     console.log(length%3)
-     console.log(binPath)
+    //  console.log(length%3)
+    //  console.log(binPath)
      let paletStream = createReadStream(binPath, { start: ddr -20,end: ddr + length-1})
     
      let paletBuffer = await readStream(paletStream)
-     console.log(paletBuffer)
+    //  console.log(paletBuffer)
      let palet =  paletBuffer.toJSON().data
     
      
@@ -109,7 +109,7 @@ export const readAllPalet  =  (binPath: string):paletType[] => {
     } catch (error) {
         alert(error.message+"，请重新选择目录！") 
     }
-    console.log(allPalet)
+    // console.log(allPalet)
     return allPalet;
 }
 

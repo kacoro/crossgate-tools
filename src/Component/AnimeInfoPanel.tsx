@@ -21,35 +21,28 @@ type Props = {
 export const AnimeInfoPanel = (props: Props) => {
     const { extendInfo, info, updateInfo } = props
     const classes = usePanelstyles();
-    console.log(extendInfo)
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // setName(event.target.value);
-        console.log(event.target.value)
         let name = event.target.name
+        if(!event.target.value) return ;
         let value = parseInt(event.target.value)
+        
         if (name == "action") {
-            // if (value > 0) {
-            //     value = Math.min(value, 20)
-            // } else {
-            //     value = Math.max(value, 0)
-            // }
             if(value<0) {value = 20} else{
-                value = value % 20
+                value = value % 21
             }
            
         }
         if (name == "direction") {
-            if (value > 0) {
-                value = Math.min(value, 7)
-            } else {
-                value = Math.max(value, 0)
+            if(value<0) {value = 7} else{
+                value = value % 8
             }
         }
         updateInfo(event.target.name, value)
     }
 
     return <>
-        {Object.keys(info).map((key: string) => {
+        {info&&Object.keys(info).map((key: string) => {
             return AnimeInfoList[key] && <Grid container spacing={1} key={key} className={classes.grid}>
                 <Grid item xs={6} className={classes.gridRight}>{AnimeInfoList[key].name}</Grid>
                 <Grid item xs={6} className={classes.gridRight}>{info[key]}</Grid>
@@ -57,12 +50,12 @@ export const AnimeInfoPanel = (props: Props) => {
         })
         }
         <Divider />
-        {Object.keys(extendInfo).map((key: string) => {
+        {extendInfo&&Object.keys(extendInfo).map((key: string) => {
             return AnimeInfoList[key] && <Grid container spacing={1} key={key} className={classes.grid}>
                 <Grid item xs={6} className={classes.gridRight}>{AnimeInfoList[key].name}</Grid>
                 <Grid item xs={6} className={classes.gridRight}>
                     {key == "action" || key == "direction" ?
-                        <TextField id="filled-basic" className={classes.input} placeholder="物理编号"
+                        <TextField id="filled-basic" className={classes.input}
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter') {
                                     event.stopPropagation;
