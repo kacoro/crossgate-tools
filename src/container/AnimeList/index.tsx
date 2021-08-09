@@ -203,10 +203,11 @@ export function AnimeList(props: Props) {
     useEffect(() => {
       
         console.log("images", extendInfo?.info?.reverse)
-        if (extendInfo && extendInfo.images && extendInfo.images.length > 0) {
+        if (canvas.current&&extendInfo && extendInfo.images && extendInfo.gifInfo && extendInfo.images.length > 0) {
             const context = canvas.current.getContext("2d");
-            const width =  container.current.clientWidth
-            const height = container.current.clientHeight
+            let gifInfo = extendInfo.gifInfo
+            const width =  gifInfo.width
+            const height = gifInfo.height
             // console.log(extendInfo.gifInfo)
             cancelAnimationFrame(rAF.current);
             // context.clearRect(0, 0, width, height)
@@ -214,7 +215,7 @@ export function AnimeList(props: Props) {
             // context.clearRect(0, 0, width, heigth)
             canvas.current.width = width
             canvas.current.height = height
-            if(extendInfo?.info?.reverse==5){
+            if(extendInfo?.info?.reverse%2){
                 console.log(extendInfo.info.reserve)
                 context.translate(canvas.current.width, 0);
                 context.scale(-1, 1); //左右镜像翻转
@@ -241,7 +242,7 @@ export function AnimeList(props: Props) {
                     // (milliseconds / (desc.v1.duration / desc.v1.frames)) % desc.v1.frames
                     let timestamp = info.time / info.frames
                     let start = 0;
-                    renderCanvas(context, start, 0, extendInfo.graphicInfos, sprites, timestamp, width, height,3)
+                    renderCanvas(context, start, 0, gifInfo.frames, sprites, timestamp, width, height,true)
                 })
             });
 
@@ -255,9 +256,9 @@ export function AnimeList(props: Props) {
         let offset = {
             x: 0, y: 0
         }
-        let tilewidth = 64
-        let tileheight = 47
-        var θ = tileheight / tilewidth
+        // let tilewidth = 64
+        // let tileheight = 47
+        // var θ = tileheight / tilewidth
 
         // offset.x = (_graphicInfo.x + width/2) / 64*47
         // offset.y = (_graphicInfo.y + height  -13)
@@ -266,8 +267,8 @@ export function AnimeList(props: Props) {
             y: (canvas.current.height) / 2
         }
         // console.log("center:", center, _graphicInfo)
-        offset.x = center.x + _graphicInfo.x
-        offset.y = center.y + _graphicInfo.y
+        offset.x =  _graphicInfo.x
+        offset.y =  _graphicInfo.y
         // console.log("offset:", offset)
         return offset
     }

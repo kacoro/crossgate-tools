@@ -435,15 +435,12 @@ const getframe = async (action: number, direction: number, AnimeGroup: animeFram
             }
         }
 
-        let gifInfo = {
-            x,
-            y,
-            width,
-            height
-        }
-        console.log(graphicInfos)
+        let gifInfo =  getRealGifInfo(graphicInfos)
+        console.log({reverse})
+        console.log(gifInfo)
         return { images,graphicInfos ,gifInfo,time,frames,reverse}
     } catch (error) {
+        console.log(error.message)
         return { images:null,graphicInfos:null,gifInfo:null,time,frames,reverse}
     }
 }
@@ -461,30 +458,35 @@ export interface RealGifType {
     flag?: number,
     unKnow?: number[],
     tileId?: number,
-    frames?: RealGifType[]
+    frames?: RealGifType[],
 }
 export const getRealGifInfo = (data: RealGifType[]) => {
+    
     let info = data.reduce((prev: RealGifType, cur: RealGifType) => {
         let height = prev.height > cur.height ? prev.height : cur.height
         let width = prev.width > cur.width ? prev.width : cur.width
         let y = Math.abs(prev.y) > Math.abs(cur.y) ? Math.abs(prev.y) : Math.abs(cur.y)
         let x = Math.abs(prev.x) > Math.abs(cur.x) ? Math.abs(prev.x) : Math.abs(cur.x)
-        if (prev.height > cur.height && Math.abs(prev.y) < Math.abs(cur.y)) {
-            height = height + Math.abs(cur.y) - Math.abs(prev.y)
-        }
-        if (prev.width > cur.width && Math.abs(prev.x) < Math.abs(cur.x)) {
-            width = width + Math.abs(cur.x) - Math.abs(prev.x)
-        }
-        let data: RealGifType = { height, y, width, x }
+        let data: RealGifType = { height, y, width, x}
         // let maxItem = prev.height + Math.abs(prev.y) > cur.height + Math.abs(cur.y) ?prev:cur
         return data
     })
-
+   
     let frames = data.map(item => {
-        item.x += info.x
-        item.y += info.y
+        item.x += Math.abs(info.x)
+        item.y += Math.abs(info.y)
         return item
     })
+    let maxYItem = frames.reduce((prev: RealGifType, cur: RealGifType) => {//取得最大的y项，用来计算最大的高度
+        return prev.height + prev.y > cur.y + cur.height? prev :cur
+    })
+    let maxXItem = frames.reduce((prev: RealGifType, cur: RealGifType) => {//取得最大的X项，用来计算最大的宽度
+        return prev.width + prev.x  > cur.x + cur.width ? prev :cur
+    })
+    info.height = maxYItem.height + Math.abs(maxYItem.y)
+    info.width =  maxXItem.width + Math.abs(maxXItem.x)
+    info.x = -Math.abs(info.x)
+    info.y = -Math.abs(info.y)
     info.frames = frames
     return info
 }
