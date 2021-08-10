@@ -149,7 +149,7 @@ export function InfoList(props: Props) {
                 if(tempPalet.length>0){
                     _palet = tempPalet
                 }
-                let image: any = await getImage(infos, graphic.current, _palet)
+                let {image} = await getImage(infos, graphic.current, _palet)
                 // console.log("getImage",image)
                 //console.log(image);
                 if (image && image.width > 0) {
