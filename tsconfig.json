@@ -5,8 +5,9 @@
       "noImplicitAny": true,
       "allowSyntheticDefaultImports": true,
       "moduleResolution": "node",
+      // "module": "es6",
       "module": "es6",
-      // "lib": ["es2019"], // 只引入es6的库文件，不引入dom的库文件
+       "lib": [ "dom", "es5", "es2015.promise" ,"es2015", "es2017", "es2019"], // 只引入es6的库文件，不引入dom的库文件
       "target": "es5",
       "jsx": "react",
       "allowJs": true,

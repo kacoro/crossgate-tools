@@ -113,7 +113,7 @@ export const readAllAnime = async (binPath: string): Promise<{ allAnime: allAnim
                     let info = getImageInfo(index, hiddenBuffer)
                     if (info && info.width == 4 && info.height == 1) {
                         hiddenPalet[info.tileId] = info
-                    }else if(info.tileId!=0&&info.tileId!=3){
+                    } else if (info.tileId != 0 && info.tileId != 3) {
                         hiddenPalet[info.tileId] = info
                         //地图编号高位为0或者3(乐园版本的地图)
                     }
@@ -242,7 +242,7 @@ interface paletType {
 }
 
 //获取单个图动画信息
-export const  getAnimeInfo1 = async (i: number, graphicInfo: Buffer) =>{
+export const getAnimeInfo1 = async (i: number, graphicInfo: Buffer) => {
     try {
         let buf1 = Buffer.allocUnsafe(12);
         graphicInfo.copy(buf1, 0, i * 12, (i + 1) * 12);
@@ -253,14 +253,14 @@ export const  getAnimeInfo1 = async (i: number, graphicInfo: Buffer) =>{
         return null
     }
 }
-interface getAnimeInfoType{
+interface getAnimeInfoType {
     index?: number, animesInfo?: Buffer,
-    cancel?:boolean
+    cancel?: boolean
 }
-export const  getAnimeInfo = async (props:getAnimeInfoType) =>{
-    const {index,animesInfo,cancel} = props
-    if(cancel)  return new Promise(() => {})
-    return new Promise((res,rej)=>{
+export const getAnimeInfo = async (props: getAnimeInfoType) => {
+    const { index, animesInfo, cancel } = props
+    if (cancel) return new Promise(() => { })
+    return new Promise((res, rej) => {
         try {
             let buf1 = Buffer.allocUnsafe(12);
             animesInfo.copy(buf1, 0, index * 12, (index + 1) * 12);
@@ -272,7 +272,7 @@ export const  getAnimeInfo = async (props:getAnimeInfoType) =>{
             rej(null)
         }
     })
-    
+
 }
 
 const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
@@ -313,8 +313,8 @@ const readAnimeByStream = async (binPath: string, infoJson: infoType) => {
             })
             let graphicHead = await readStream(graphicStream)
             let graphicHeadInfo = getInfo(graphicHead, 2) as graphicIds
-        
-           
+
+
             graphicIds.push(graphicHeadInfo)
         }
         count += headInfo.frames
@@ -348,10 +348,10 @@ export async function getAnime(infoJson: infoType, animePath: string,
     const { AnimeGroup } = await readAnimeByStream(animePath, infoJson)
     //使用动画编号来查
     let info = AnimeGroup[0].info
-    
+
     let frame = AnimeGroup.find(item => item.info.action == 0 && item.info.direction == 0);
-    if(frame){
-         info = frame.info
+    if (frame) {
+        info = frame.info
     }
     let hiddenPalet: any
     if (info.paletId) {//如果有隐藏的id，则查找。//GraphicInfoV3_*.bin中
@@ -360,11 +360,11 @@ export async function getAnime(infoJson: infoType, animePath: string,
 
         // console.log(hiddenPalets,info.paletId)
         let graphicInfo = hiddenPalets[infoJson.id]
-      
+
         // if (graphicInfo && graphicInfo.width == 4 && graphicInfo.height == 1 && graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
-        if (graphicInfo &&  graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
+        if (graphicInfo && graphicInfo.tileId != 0) {//这种才是调色版的。暂时以这个判断
             hiddenPalet = await getHiddenPalet(graphicPath, graphicInfo)
-            
+
             const { graphic, version, localPaletInfo } = await readGraphiByStream(graphicPath, graphicInfo)
             if (version == 1 || version == 3) {
                 let elementSize = graphicInfo.width * graphicInfo.height
@@ -388,22 +388,22 @@ export async function getAnime(infoJson: infoType, animePath: string,
                 }
             }
             else {
-                 hiddenPalet = graphic.toJSON().data
+                hiddenPalet = graphic.toJSON().data
                 return hiddenPalet
             }
         }
     }
 
 
-    const {images,graphicInfos,gifInfo} = await getframe(info.action,info.direction,AnimeGroup,hiddenPalet, palet, graphics, graphicPath)
-    return { info, images, AnimeGroup, hiddenPalet ,graphicInfos,gifInfo}
+    const { images, imageDatas, graphicInfos, gifInfo } = await getframe(info.action, info.direction, AnimeGroup, hiddenPalet, palet, graphics, graphicPath)
+    return { info, images, imageDatas, AnimeGroup, hiddenPalet, graphicInfos, gifInfo }
 }
 
 const getframe = async (action: number, direction: number, AnimeGroup: animeFrames[], hiddenPalet: number[][],
     palet: any, graphics: Buffer, graphicPath: string) => {
     // let frame: animeFrames = AnimeGroup[index]
-    let width =0
-    let height =0
+    let width = 0
+    let height = 0
     let x = 0
     let y = 0
     let time = 0
@@ -416,6 +416,7 @@ const getframe = async (action: number, direction: number, AnimeGroup: animeFram
         frames = frame.info.frames
         reverse = frame.info.reverse
         let images: Bitmap[] = []
+        let imageDatas = []
         let graphicInfos = []
         for (let index = 0; index < frame.graphicIds.length; index++) {
             const id = frame.graphicIds[index].id;
@@ -424,24 +425,25 @@ const getframe = async (action: number, direction: number, AnimeGroup: animeFram
             console.log(graphicInfo)
             let _x = Math.abs(graphicInfo.x)
             let _y = Math.abs(graphicInfo.y)
-            x= Math.max(_x,x)
-            x= Math.max(_x,x)
+            x = Math.max(_x, x)
+            x = Math.max(_x, x)
 
-            width = Math.max(width,graphicInfo.width)
-            height = Math.max(height,graphicInfo.height)
-            let image: Bitmap | boolean = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
+            width = Math.max(width, graphicInfo.width)
+            height = Math.max(height, graphicInfo.height)
+            let { image, imageDataB } = await getImage(graphicInfo, graphicPath, palet, hiddenPalet)
             if (image) {
                 images.push(image)
+                imageDatas.push(imageDataB)
             }
         }
 
-        let gifInfo =  getRealGifInfo(graphicInfos)
-        console.log({reverse})
+        let gifInfo = getRealGifInfo(graphicInfos)
+        console.log({ reverse })
         console.log(gifInfo)
-        return { images,graphicInfos ,gifInfo,time,frames,reverse}
+        return { images, imageDatas, graphicInfos, gifInfo, time, frames, reverse }
     } catch (error) {
         console.log(error.message)
-        return { images:null,graphicInfos:null,gifInfo:null,time,frames,reverse}
+        return { images: null, imageDatas: null, graphicInfos: null, gifInfo: null, time, frames, reverse }
     }
 }
 
@@ -461,30 +463,30 @@ export interface RealGifType {
     frames?: RealGifType[],
 }
 export const getRealGifInfo = (data: RealGifType[]) => {
-    
+
     let info = data.reduce((prev: RealGifType, cur: RealGifType) => {
         let height = prev.height > cur.height ? prev.height : cur.height
         let width = prev.width > cur.width ? prev.width : cur.width
         let y = Math.abs(prev.y) > Math.abs(cur.y) ? Math.abs(prev.y) : Math.abs(cur.y)
         let x = Math.abs(prev.x) > Math.abs(cur.x) ? Math.abs(prev.x) : Math.abs(cur.x)
-        let data: RealGifType = { height, y, width, x}
+        let data: RealGifType = { height, y, width, x }
         // let maxItem = prev.height + Math.abs(prev.y) > cur.height + Math.abs(cur.y) ?prev:cur
         return data
     })
-   
+
     let frames = data.map(item => {
         item.x += Math.abs(info.x)
         item.y += Math.abs(info.y)
         return item
     })
     let maxYItem = frames.reduce((prev: RealGifType, cur: RealGifType) => {//取得最大的y项，用来计算最大的高度
-        return prev.height + prev.y > cur.y + cur.height? prev :cur
+        return prev.height + prev.y > cur.y + cur.height ? prev : cur
     })
     let maxXItem = frames.reduce((prev: RealGifType, cur: RealGifType) => {//取得最大的X项，用来计算最大的宽度
-        return prev.width + prev.x  > cur.x + cur.width ? prev :cur
+        return prev.width + prev.x > cur.x + cur.width ? prev : cur
     })
     info.height = maxYItem.height + Math.abs(maxYItem.y)
-    info.width =  maxXItem.width + Math.abs(maxXItem.x)
+    info.width = maxXItem.width + Math.abs(maxXItem.x)
     info.x = -Math.abs(info.x)
     info.y = -Math.abs(info.y)
     info.frames = frames

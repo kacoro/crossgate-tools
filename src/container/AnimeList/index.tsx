@@ -22,8 +22,9 @@ import { AnimeInfoPanel, infoType } from '../../Component/AnimeInfoPanel';
 import { usePanelstyles } from '../../Component/usePanelstyles';
 import { allAnimeType } from 'src/Utils/anime';
 import { graphicInfo } from '../../Utils/readImages';
-
-
+import { genGif256, frameType } from '../../Utils/image/gif';
+import { saveFile } from '../../Utils/file'
+import { bytes2Int } from '../../Utils/covert';
 type Props = {
     folder?: string;
     currentPalet?: string | number,
@@ -75,7 +76,7 @@ export function AnimeList(props: Props) {
         });
         saveToDb(nextValue)
 
-    }, 50 ), []); // will be created only once initially 1000 / 24
+    }, 50), []); // will be created only once initially 1000 / 24
 
 
     const handleChangeChecked = (event: { target: { checked: boolean | ((prevState: boolean) => boolean); }; }) => {
@@ -140,17 +141,19 @@ export function AnimeList(props: Props) {
         if (animesInfo.current && animesInfo.current.length != 0) {
             // console.log("info")
             (async () => {
-                getAnimeInfo({cancel:true}) 
-                let info = await getAnimeInfo({index:dbValue, animesInfo:animesInfo.current})
+                getAnimeInfo({ cancel: true })
+                let info = await getAnimeInfo({ index: dbValue, animesInfo: animesInfo.current })
                 SetInfos(info)
-                
-                
+                SetExtendInfo((data: any) => {
+                    return { ...data,hiddenPalet:null }
+                })
+
             })()
-            
+
         }
     }, [dbValue, animesInfo.current])
 
-    // 获取图片数据
+    // 获取动画数据
     useEffect(function () {
         if (animePath.current && animePath.current.length != 0 && infos) {
 
@@ -185,11 +188,11 @@ export function AnimeList(props: Props) {
                 if (tempPalet.length > 0) {
                     _palet = tempPalet
                 }
-                let { images, graphicInfos, gifInfo ,time,frames,reverse}: any = await getframe(extendInfo.info.action, extendInfo.info.direction, extendInfo.AnimeGroup, extendInfo.hiddenPalet, _palet, graphicsInfo.current, graphicPath.current)
+                let { images,imageDatas, graphicInfos, gifInfo, time, frames, reverse }: any = await getframe(extendInfo.info.action, extendInfo.info.direction, extendInfo.AnimeGroup, extendInfo.hiddenPalet, _palet, graphicsInfo.current, graphicPath.current)
                 // console.log("getImage",image)
-                SetExtendInfo((data: { images: any; info:any}) => {
-                    let info = { ...data.info, time,frames ,reverse}
-                    return { ...data, images: images, graphicInfos, gifInfo,info }
+                SetExtendInfo((data: { images: any; info: any }) => {
+                    let info = { ...data.info, time, frames, reverse }
+                    return { ...data, images: images,imageDatas, graphicInfos, gifInfo, info }
                 })
                 //console.log(image);
 
@@ -201,12 +204,12 @@ export function AnimeList(props: Props) {
 
     //生成图片
     useEffect(() => {
-      
+
         console.log("images", extendInfo?.info?.reverse)
-        if (canvas.current&&extendInfo && extendInfo.images && extendInfo.gifInfo && extendInfo.images.length > 0) {
+        if (canvas.current && extendInfo && extendInfo.images && extendInfo.gifInfo && extendInfo.images.length > 0) {
             const context = canvas.current.getContext("2d");
             let gifInfo = extendInfo.gifInfo
-            const width =  gifInfo.width
+            const width = gifInfo.width
             const height = gifInfo.height
             // console.log(extendInfo.gifInfo)
             cancelAnimationFrame(rAF.current);
@@ -215,7 +218,7 @@ export function AnimeList(props: Props) {
             // context.clearRect(0, 0, width, heigth)
             canvas.current.width = width
             canvas.current.height = height
-            if(extendInfo?.info?.reverse%2){
+            if (extendInfo?.info?.reverse % 2) {
                 console.log(extendInfo.info.reserve)
                 context.translate(canvas.current.width, 0);
                 context.scale(-1, 1); //左右镜像翻转
@@ -242,7 +245,7 @@ export function AnimeList(props: Props) {
                     // (milliseconds / (desc.v1.duration / desc.v1.frames)) % desc.v1.frames
                     let timestamp = info.time / info.frames
                     let start = 0;
-                    renderCanvas(context, start, 0, gifInfo.frames, sprites, timestamp, width, height,true)
+                    renderCanvas(context, start, 0, gifInfo.frames, sprites, timestamp, width, height, true)
                 })
             });
 
@@ -256,19 +259,14 @@ export function AnimeList(props: Props) {
         let offset = {
             x: 0, y: 0
         }
-        // let tilewidth = 64
-        // let tileheight = 47
-        // var θ = tileheight / tilewidth
-
-        // offset.x = (_graphicInfo.x + width/2) / 64*47
-        // offset.y = (_graphicInfo.y + height  -13)
+        
         let center = {
             x: (canvas.current.width) / 2,
             y: (canvas.current.height) / 2
         }
         // console.log("center:", center, _graphicInfo)
-        offset.x =  _graphicInfo.x
-        offset.y =  _graphicInfo.y
+        offset.x = _graphicInfo.x
+        offset.y = _graphicInfo.y
         // console.log("offset:", offset)
         return offset
     }
@@ -306,15 +304,15 @@ export function AnimeList(props: Props) {
             // console.timeEnd("start")
             i++
             start = null
-                if(repeat&&typeof repeat == 'number'&&(index==sprites.length-1)){
-                    // console.log({repeat})
-                    repeat--
-                }
+            if (repeat && typeof repeat == 'number' && (index == sprites.length - 1)) {
+                // console.log({repeat})
+                repeat--
+            }
         }
 
-        
+
         if (repeat || i < sprites.length) {
-            
+
             rAF.current = requestAnimationFrame(() => {
                 renderCanvas(context, start, i, graphicInfos, sprites, timestamp, width, height, repeat)
             })
@@ -325,15 +323,37 @@ export function AnimeList(props: Props) {
 
 
     const handleSave = () => {
-        let fileName = 'testImg';
-        let mimeType: MIME_TYPE = "image/bmp";
-        if (checked) {//为真表示透明，直接存为png
-            mimeType = "image/png";
-            fileName += '.png';
-        } else {//为假保存位bmp
-            mimeType = "image/bmp";
-            fileName += '.bmp';
-        }
+        if (extendInfo && extendInfo.gifInfo) {
+            let gifInfo = extendInfo.gifInfo
+
+            let fileName = infos.id+'.gif';
+            let _palette = palets
+            if (tempPalet.length > 0) {
+                _palette = tempPalet
+            }
+            if (extendInfo.hiddenPalet) {
+                _palette = extendInfo.hiddenPalet
+            }
+            console.log(extendInfo.hiddenPalet)
+            let palette:number[] =[]
+            for (let index = 0; index < _palette.length; index++) {
+                let color =  _palette[index] as unknown as Uint8Array
+                let rgb = "0x"+ bytes2Int(color.reverse()).toString(16)
+                // let rgb = "0x"+  0xff & color[0].toString(16)  + 0xff & color[1].toString(16) + 0xff & color[2].toString(16)
+
+                palette.push(parseInt(rgb))
+            }
+            // let palette:number[] = _palette.map((item )=>{
+            //     let color =  item as unknown as number[]
+            //     return color[0] << 16 & 0xff + color[1] << 8 & 0xff + color[2]  & 0xff
+            // })
+            console.log(gifInfo,palette)
+            console.log(extendInfo.imageDatas)
+             let data = genGif256(gifInfo.width,gifInfo.height,extendInfo.info.time,palette,gifInfo.frames,extendInfo.imageDatas)
+             console.log(data)
+              saveFile(data,fileName)
+        }   
+
         // exportCanvasAsPNG(mimeType, canvas.current, fileName, extendInfo)
     }
 

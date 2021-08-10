@@ -92,7 +92,7 @@ interface infoType {
 
 //获取单子图片数据
 export async function getImage(infoJson: infoType, graphics_path: string, palet: any,hiddenPalet?:any) {
-    if (!infoJson || !graphics_path || !palet) return false
+    if (!infoJson || !graphics_path || !palet) return {image:null,imageData:null,imageDataB:null}
 
     const { graphic, version, localPaletInfo } = await readGraphiByStream(graphics_path, infoJson)
     // console.log(version,localPaletInfo)
@@ -108,25 +108,38 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
         // var imageData = decodeImgData(graphic.toJSON().data)
         var imgBuffer = decodeByBuferr(graphic, elementSize)
         let imageData = imgBuffer.toJSON().data
+        let imageDataB = transitionY(imgBuffer,infoJson.width,infoJson.height)
+        
         // console.timeEnd("decode")
         // console.log('data:image/bmp;base64,'+Buffer.from(imageData._imgData).toString('base64'))
         try {
             let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo,hiddenPalet)
 
-            return image
+            return {image,imageData,imageDataB}
         } catch (error) {
             console.log(error)
-            return null
+            return {image:null,imageData:null,imageDataB:null}
         }
 
     } else {
-        let imgData = graphic.toJSON().data
-        let image = await filleImgPixel(infoJson, imgData, palet, localPaletInfo,hiddenPalet)
-        return image
+        let imageData = graphic.toJSON().data
+        let imageDataB = transitionY(imgBuffer,infoJson.width,infoJson.height)
+        let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo,hiddenPalet)
+        return  {image,imageData,imageDataB}
     }
     // console.log(image)
     // return false
 }
+
+export const transitionY = (buff:Buffer,width:number,height:number)=>{
+    console.log(buff,width,height)
+    let data = Buffer.alloc(buff.length)
+    for (let y = 0; y < height; y++) {//
+        buff.copy(data,  width * (height - y - 1),  width * y,  width * y +  width)
+      }
+    return data
+}
+
 
 export interface graphicInfo{
     id:number,

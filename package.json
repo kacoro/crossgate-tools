@@ -10,6 +10,7 @@
   "scripts": {
     "start-electron": "cross-env ENV=development electron .",
     "start": "cross-env NODE_ENV=development webpack-dev-server --config webpack.config.js",
+    "dev": "cross-env NODE_ENV=development webpack-dev-server --config webpack.config.js",
     "build-render": "cross-env NODE_ENV=production webpack --config webpack.config.js",
     "build-electron": "cross-env NODE_ENV=production electron-builder build -w",
     "build": "npm run build-render && npm run build-electron",
