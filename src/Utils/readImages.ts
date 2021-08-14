@@ -5,7 +5,7 @@ import Jimp from 'jimp'
 const jimp: Jimp = require('jimp')
 import { g_ImgMap, arrTrans, BG_COLOR } from "./config";
 import { PaletsType } from '../Store/reduce';
-import { decodeByBuferr } from './cgCoder'
+import { decodeByBuferr,runLength } from './cgCoder'
 import { bytes2Int } from './covert';
 import { readStream } from './steam'
 import { Bitmap } from '@container/InfoList';
@@ -106,7 +106,20 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
             console.log({elementSize})
         }
         // var imageData = decodeImgData(graphic.toJSON().data)
+        // console.log("graphic")
+        // console.log(graphic)
+        // console.log(graphic.toJSON().data.join(","))
         var imgBuffer = decodeByBuferr(graphic, elementSize)
+        // console.log("decodeByBuferr",imgBuffer)
+        // console.log(imgBuffer)
+        // var test = runLength(Buffer.from(imgBuffer))
+        // console.log("test")
+        // console.log(test)
+        // console.log(test.toJSON().data.toString())
+        // var imgBuffer2 = decodeByBuferr(test, elementSize)
+        // console.log("decodeByBuferr",imgBuffer2)
+       
+       
         let imageData = imgBuffer.toJSON().data
         let imageDataB = transitionY(imgBuffer,infoJson.width,infoJson.height)
         
@@ -123,7 +136,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
 
     } else {
         let imageData = graphic.toJSON().data
-        let imageDataB = transitionY(imgBuffer,infoJson.width,infoJson.height)
+        let imageDataB = transitionY(graphic,infoJson.width,infoJson.height)
         let image = await filleImgPixel(infoJson, imageData, palet, localPaletInfo,hiddenPalet)
         return  {image,imageData,imageDataB}
     }
@@ -132,7 +145,7 @@ export async function getImage(infoJson: infoType, graphics_path: string, palet:
 }
 
 export const transitionY = (buff:Buffer,width:number,height:number)=>{
-    console.log(buff,width,height)
+    // console.log(buff,width,height)
     let data = Buffer.alloc(buff.length)
     for (let y = 0; y < height; y++) {//
         buff.copy(data,  width * (height - y - 1),  width * y,  width * y +  width)

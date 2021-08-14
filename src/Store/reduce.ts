@@ -52,9 +52,6 @@ const reducer = (state = initialState, action: any) => {
   console.log(current)
   switch (action.type) {
     case actionTypes.SELECT_FOLDER:
-      console.log({action})
-      console.log(state)
-      console.log("this")
       
       return {
         ...state,
@@ -67,22 +64,17 @@ const reducer = (state = initialState, action: any) => {
         
       }
      case actionTypes.SELECT_FOLDER_ANIME:
-       console.log("this")
-      console.log({action})
-      console.log(state)
      
       return {
         ...state,
         folder: action.folder,
         allPalet: action.allPalet,
         allAnime:action.allAnime,
-        palets: action.allPalet[current],
         hiddenPalet:action.hiddenPalet
       }
 
 
     case actionTypes.SELECT_PALET:
-      console.log({action},state.allPalet)
       return {
         ...state,
         currentPalet: action.palet,
